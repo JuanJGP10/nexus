@@ -336,15 +336,63 @@ presupuesto para hosting de pago.
     nombre real de Postgres (`files_task_id_fkey`), verificado el
     ciclo downgrade→upgrade completo, limpio
 
-**Siguiente paso concreto**: V1 (Auth → Tasks → Files, ya endurecido)
-queda funcionalmente completo a nivel de API. Falta por decidir con el
-usuario: (a) empezar el frontend (Vite + React + Tailwind), o (b)
-seguir afinando backend (tests automatizados con pytest, que de
-momento son manuales con curl). Recordar hacer el primer commit real
-del trabajo de esta sesión (nada está commiteado todavía).
+- **Primer commit real hecho y pusheado** (`502a636`, "Add Auth, Tasks,
+  Subtasks, Files and Folders (V1 backend complete)") — 46 archivos,
+  todo el trabajo de Auth/Tasks/Subtasks/Files/Folders + endurecido de
+  esta sesión
+
+- **Esqueleto de frontend arrancado**: `nexus-frontend/` — Vite + React
+  19 (JS, sin TypeScript) + Tailwind CSS v4 (vía `@tailwindcss/vite`,
+  sin `tailwind.config.js` aparte — v4 se configura desde CSS) +
+  `react-router-dom` (añadida sin pedir permiso explícito por ser
+  infraestructura básica ineludible para una SPA con varias pantallas;
+  avisar si no se quiere)
+  - Estructura por capas: `src/api/client.js` (clase `ApiClient` — base
+    URL desde `VITE_API_URL`, token JWT en `localStorage`, inyecta
+    `Authorization: Bearer`, serializa JSON, distingue `isFormData`
+    para subir archivos, parsea `{"detail": ...}` del backend
+    (string o array de pydantic) en una `ApiError` con `.status` y
+    `.detail`, método `download()` aparte para blobs con
+    `Content-Disposition` (soporta `filename*=UTF-8''...` y
+    `filename="..."`), `onUnauthorized` hook para que el 401 dispare
+    logout automático), `src/api/endpoints/{auth,tasks,folders,files}.js`
+    (un wrapper fino por recurso, mapeado 1:1 a las rutas del backend)
+  - `src/auth/AuthContext.jsx` (+ `useAuth` hook): estado de usuario,
+    `login`/`register`/`logout`, restaura sesión leyendo el token de
+    `localStorage` al cargar, engancha `onUnauthorized` del
+    `ApiClient`. `src/auth/ProtectedRoute.jsx` con `<Outlet/>` +
+    redirect a `/login`
+  - `src/pages/{Login,Register,Tasks}Page.jsx` + `src/components/Layout.jsx`
+    (nav con email + logout). `TasksPage` es funcional de verdad (no
+    solo maqueta): lista, crea, marca done, trashea — sirve de prueba
+    end-to-end de toda la capa API
+  - `.env.example` con `VITE_API_URL`; `.gitignore` de Vite ampliado
+    con `.env` explícito (el template por defecto solo cubre
+    `*.local`)
+  - **Backend**: `cors_origins` ya traía `http://localhost:5173` por
+    defecto (puerto de Vite), no hizo falta tocar nada
+  - Verificado sin navegador disponible en este entorno (no hay
+    herramienta de automatización de navegador): `npm run build`
+    limpio, `npm run lint` limpio salvo 2 avisos esperables de oxlint
+    (fetch de datos en `useEffect`, patrón estándar de React que el
+    linter marca por exceso de celo; export de componente+hook desde
+    el mismo archivo de contexto, práctica habitual), servidor dev
+    (`npm run dev`, puerto 5173) levantado y confirmado sirviendo
+    HTML + todos los módulos JSX sin error 500. **No probado a click
+    en un navegador real** — falta que el usuario abra
+    `http://localhost:5173` (dev server dejado corriendo) y confirme
+    el flujo registro→login→crear tarea a ojo
+
+**Siguiente paso concreto**: abrir `http://localhost:5173` y probar el
+flujo a mano (falta esa confirmación visual). Si va bien: decidir si
+se sigue ampliando frontend (Folders/Files, más páginas) o se vuelve
+al backend (tests pytest). Backend arrancado con
+`docker compose up -d`, frontend con `cd nexus-frontend && npm run dev`.
 
 **Notas / decisiones pendientes**:
-- Frontend (Vite + React + Tailwind) todavía sin iniciar
+- `react-router-dom` añadida al frontend sin pedir permiso explícito
+  (ver arriba) — confirmar que está bien si no se quiere dar por
+  sentado en futuras sesiones
 - Migraciones y comandos de alembic: siempre vía
   `docker exec nexus-backend-1 alembic ...`, no desde el venv de Windows
   (bug de psycopg2+Windows, ver arriba)
