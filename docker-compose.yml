@@ -1,0 +1,25 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: nexus
+      POSTGRES_PASSWORD: nexus
+      POSTGRES_DB: nexus
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build: ./nexus-backend
+    environment:
+      DATABASE_URL: postgresql://nexus:nexus@db:5432/nexus
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    volumes:
+      - ./nexus-backend/app:/app/app
+
+volumes:
+  pgdata:
