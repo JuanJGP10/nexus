@@ -20,6 +20,9 @@ services:
       - db
     volumes:
       - ./nexus-backend/app:/app/app
+      - ./nexus-backend/alembic:/app/alembic
+      - ./nexus-backend/alembic.ini:/app/alembic.ini
+      - ./nexus-backend/storage:/data/storage
 
 volumes:
   pgdata:
