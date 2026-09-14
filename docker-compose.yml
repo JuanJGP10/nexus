@@ -9,6 +9,8 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
 
   backend:
     build: ./nexus-backend
@@ -25,7 +27,8 @@ services:
       - ./nexus-backend/alembic:/app/alembic
       - ./nexus-backend/alembic.ini:/app/alembic.ini
       - ${STORAGE_PATH:-./nexus-backend/storage}:/data/storage
-      
+    restart: unless-stopped
+
   frontend:
     build:
       context: ./nexus-frontend
@@ -35,11 +38,12 @@ services:
       - "5173:80"
     depends_on:
       - backend
+    restart: unless-stopped
   cloudflared:
     image: cloudflare/cloudflared:latest
     container_name: cloudflared
     restart: unless-stopped
     command: tunnel run --token ${CLOUDFLARE_TUNNEL_TOKEN}
-
+    
 volumes:
   pgdata:
