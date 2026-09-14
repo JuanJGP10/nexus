@@ -35,6 +35,11 @@ services:
       - "5173:80"
     depends_on:
       - backend
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: unless-stopped
+    command: tunnel run --token ${CLOUDFLARE_TUNNEL_TOKEN}
 
 volumes:
   pgdata:
