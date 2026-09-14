@@ -75,7 +75,7 @@ export function TasksPage() {
           />
           <button
             type="submit"
-            className="bg-accent px-4 py-2 font-mono text-xs tracking-[0.1em] text-text-primary uppercase hover:bg-accent-hover"
+            className="bg-accent px-4 py-2 font-mono text-xs tracking-[0.1em] text-accent-contrast uppercase hover:bg-accent-hover"
           >
             Añadir
           </button>

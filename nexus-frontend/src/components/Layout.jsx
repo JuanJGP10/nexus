@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { ThemeSwitcher } from './ThemeSwitcher'
 
 const NAV_ITEMS = [
   { to: '/', label: 'Panel', end: true, icon: PanelIcon },
@@ -64,6 +65,7 @@ export function Layout() {
         </div>
         <div className="flex items-center gap-3 font-mono text-xs text-text-secondary sm:gap-4">
           <span className="hidden max-w-40 truncate sm:inline">{user?.email}</span>
+          <ThemeSwitcher />
           <button
             type="button"
             onClick={logout}

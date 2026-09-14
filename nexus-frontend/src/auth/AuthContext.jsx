@@ -41,21 +41,13 @@ export function AuthProvider({ children }) {
     [loadUser],
   )
 
-  const register = useCallback(
-    async (email, password) => {
-      await authApi.register(email, password)
-      await login(email, password)
-    },
-    [login],
-  )
-
   const logout = useCallback(() => {
     apiClient.clearToken()
     setUser(null)
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   )
