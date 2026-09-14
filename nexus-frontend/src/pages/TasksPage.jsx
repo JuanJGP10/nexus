@@ -98,7 +98,7 @@ export function TasksPage() {
                 <button
                   type="button"
                   onClick={() => toggleDone(task)}
-                  className={`h-4 w-4 shrink-0 border ${
+                  className={`relative h-5 w-5 shrink-0 border before:absolute before:-inset-2 before:content-[''] ${
                     task.is_done ? 'border-success bg-success' : 'border-border'
                   }`}
                   aria-label="Marcar como hecha"
@@ -118,13 +118,13 @@ export function TasksPage() {
                     </span>
                   )}
                 </button>
-                <span className="font-mono text-[11px] tracking-[0.1em] text-text-secondary uppercase">
+                <span className="hidden font-mono text-[11px] tracking-[0.1em] text-text-secondary uppercase sm:inline">
                   {task.priority}
                 </span>
                 <button
                   type="button"
                   onClick={() => handleTrash(task.id)}
-                  className="font-mono text-xs text-danger hover:underline"
+                  className="shrink-0 font-mono text-xs text-danger hover:underline"
                 >
                   Borrar
                 </button>

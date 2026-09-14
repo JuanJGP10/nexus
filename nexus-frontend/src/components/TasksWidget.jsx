@@ -64,7 +64,7 @@ export function TasksWidget() {
               <button
                 type="button"
                 onClick={() => toggleDone(task)}
-                className="h-3.5 w-3.5 shrink-0 border border-border transition-colors group-hover:border-accent"
+                className="relative h-3.5 w-3.5 shrink-0 border border-border before:absolute before:-inset-2 before:content-[''] transition-colors group-hover:border-accent"
                 aria-label="Marcar como hecha"
               />
               <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${PRIORITY_DOT[task.priority]}`} />

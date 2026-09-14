@@ -211,12 +211,12 @@ export function FileExplorer() {
       className="h-full"
       bodyClassName="flex flex-col"
       action={
-        <div className="flex items-center gap-3 font-mono text-[11px] tracking-[0.1em] uppercase">
+        <div className="flex w-full flex-wrap items-center gap-2 font-mono text-[11px] tracking-[0.1em] uppercase sm:w-auto sm:gap-3">
           {selectedItem?.type === 'file' && (
             <select
               value={selectedItem.data.task_id ?? ''}
               onChange={(event) => linkToTask(selectedItem.data.id, event.target.value ? Number(event.target.value) : null)}
-              className="max-w-32 border border-border bg-bg px-1.5 py-0.5 text-text-secondary normal-case outline-none focus:border-accent"
+              className="max-w-28 border border-border bg-bg px-1.5 py-1 text-text-secondary normal-case outline-none focus:border-accent sm:max-w-32 sm:py-0.5"
             >
               <option value="">Sin tarea</option>
               {tasks.map((task) => (
@@ -225,6 +225,24 @@ export function FileExplorer() {
                 </option>
               ))}
             </select>
+          )}
+          {selectedItem && (
+            <>
+              <button
+                type="button"
+                onClick={() => openItem(selectedItem)}
+                className="text-text-secondary hover:text-accent"
+              >
+                {selectedItem.type === 'folder' ? 'Abrir' : 'Descargar'}
+              </button>
+              <button
+                type="button"
+                onClick={() => deleteItem(selectedItem)}
+                className="text-danger hover:underline"
+              >
+                Eliminar
+              </button>
+            </>
           )}
           <button
             type="button"
@@ -245,9 +263,9 @@ export function FileExplorer() {
       }
     >
       {/* Breadcrumb */}
-      <div className="flex items-center gap-1 border-b border-border px-3 py-2 font-mono text-xs text-text-secondary">
+      <div className="flex items-center gap-1 overflow-x-auto border-b border-border px-3 py-2 font-mono text-xs whitespace-nowrap text-text-secondary">
         {path.map((crumb, index) => (
-          <span key={crumb.id ?? 'root'} className="flex items-center gap-1">
+          <span key={crumb.id ?? 'root'} className="flex shrink-0 items-center gap-1">
             {index > 0 && <span className="text-border">/</span>}
             <button
               type="button"
@@ -310,11 +328,15 @@ export function FileExplorer() {
               <div
                 key={`${item.type}-${item.data.id}`}
                 onClick={() => {
+                  if (isSelected) {
+                    openItem(item)
+                    return
+                  }
                   setSelectedIndex(index)
                   focusContainer()
                 }}
                 onDoubleClick={() => openItem(item)}
-                className={`flex cursor-default items-center gap-2 px-3 py-1.5 text-sm ${
+                className={`flex cursor-default items-center gap-2 px-3 py-2 text-sm sm:py-1.5 ${
                   isSelected ? 'bg-accent/15 text-text-primary' : 'text-text-primary hover:bg-surface'
                 }`}
               >
@@ -327,10 +349,10 @@ export function FileExplorer() {
                 {!isFolder && item.data.task_id && (
                   <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" title="Vinculado a una tarea" />
                 )}
-                <span className="w-16 shrink-0 text-right font-mono text-xs text-text-secondary">
+                <span className="hidden w-16 shrink-0 text-right font-mono text-xs text-text-secondary sm:inline">
                   {isFolder ? '' : formatBytes(item.data.size_bytes)}
                 </span>
-                <span className="w-20 shrink-0 text-right font-mono text-xs text-text-secondary">
+                <span className="hidden w-20 shrink-0 text-right font-mono text-xs text-text-secondary sm:inline">
                   {formatDate(item.data.created_at)}
                 </span>
               </div>
@@ -339,7 +361,7 @@ export function FileExplorer() {
         )}
       </div>
 
-      <div className="border-t border-border px-3 py-1 font-mono text-[10px] tracking-[0.1em] text-text-secondary uppercase">
+      <div className="hidden border-t border-border px-3 py-1 font-mono text-[10px] tracking-[0.1em] text-text-secondary uppercase sm:block">
         ↑↓ mover · Enter/→ abrir · ←/Retroceso subir · Supr eliminar
       </div>
     </Panel>

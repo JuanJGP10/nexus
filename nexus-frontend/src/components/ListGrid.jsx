@@ -53,7 +53,7 @@ function ListCard({ list, onRenameTitle, onAddItem, onToggleItem, onEditItemText
         <button
           type="button"
           onClick={onRemoveList}
-          className="shrink-0 font-mono text-xs text-text-secondary hover:text-danger"
+          className="relative shrink-0 p-1 font-mono text-xs text-text-secondary before:absolute before:-inset-2 before:content-[''] hover:text-danger"
           aria-label="Eliminar lista"
         >
           ✕
@@ -99,7 +99,7 @@ function ItemList({ items, onToggleItem, onEditItemText, onRemoveItem }) {
           <button
             type="button"
             onClick={() => onToggleItem(item)}
-            className={`h-3.5 w-3.5 shrink-0 border ${item.is_done ? 'border-success bg-success' : 'border-border'}`}
+            className={`relative h-3.5 w-3.5 shrink-0 border before:absolute before:-inset-2 before:content-[''] ${item.is_done ? 'border-success bg-success' : 'border-border'}`}
             aria-label="Marcar como hecho"
           />
           {editingId === item.id ? (
@@ -128,7 +128,7 @@ function ItemList({ items, onToggleItem, onEditItemText, onRemoveItem }) {
           <button
             type="button"
             onClick={() => onRemoveItem(item.id)}
-            className="shrink-0 font-mono text-xs text-text-secondary opacity-0 hover:text-danger group-hover:opacity-100"
+            className="relative shrink-0 p-1 font-mono text-xs text-text-secondary opacity-100 before:absolute before:-inset-2 before:content-[''] hover:text-danger sm:opacity-0 sm:group-hover:opacity-100"
             aria-label="Eliminar elemento"
           >
             ✕

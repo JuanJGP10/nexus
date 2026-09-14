@@ -2,20 +2,50 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Panel', end: true },
-  { to: '/tasks', label: 'Tareas', end: false },
-  { to: '/lists', label: 'Listas', end: false },
+  { to: '/', label: 'Panel', end: true, icon: PanelIcon },
+  { to: '/tasks', label: 'Tareas', end: false, icon: TasksIcon },
+  { to: '/lists', label: 'Listas', end: false, icon: ListsIcon },
 ]
+
+function PanelIcon({ className }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" className={className}>
+      <rect x="2.5" y="2.5" width="6" height="15" rx="1" stroke="currentColor" strokeWidth="1.3" />
+      <rect x="11.5" y="2.5" width="6" height="7" rx="1" stroke="currentColor" strokeWidth="1.3" />
+      <rect x="11.5" y="11.5" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.3" />
+    </svg>
+  )
+}
+
+function TasksIcon({ className }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" className={className}>
+      <path d="M3.5 5h13M3.5 10h13M3.5 15h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <circle cx="3.5" cy="5" r="0" fill="none" />
+    </svg>
+  )
+}
+
+function ListsIcon({ className }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" className={className}>
+      <rect x="2.5" y="2.5" width="6.5" height="6.5" rx="0.5" stroke="currentColor" strokeWidth="1.3" />
+      <rect x="11" y="2.5" width="6.5" height="6.5" rx="0.5" stroke="currentColor" strokeWidth="1.3" />
+      <rect x="2.5" y="11" width="6.5" height="6.5" rx="0.5" stroke="currentColor" strokeWidth="1.3" />
+      <rect x="11" y="11" width="6.5" height="6.5" rx="0.5" stroke="currentColor" strokeWidth="1.3" />
+    </svg>
+  )
+}
 
 export function Layout() {
   const { user, logout } = useAuth()
 
   return (
-    <div className="flex h-screen flex-col">
-      <header className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-6 py-3">
+    <div className="flex h-dvh flex-col">
+      <header className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-4 py-3 sm:px-6">
         <div className="flex items-center gap-8">
           <span className="font-mono text-sm tracking-[0.35em] text-accent uppercase">Nexus</span>
-          <nav className="flex items-center gap-1 font-mono text-xs tracking-[0.1em] uppercase">
+          <nav className="hidden items-center gap-1 font-mono text-xs tracking-[0.1em] uppercase sm:flex">
             {NAV_ITEMS.map((item) => (
               <NavLink
                 key={item.to}
@@ -32,20 +62,39 @@ export function Layout() {
             ))}
           </nav>
         </div>
-        <div className="flex items-center gap-4 font-mono text-xs text-text-secondary">
-          <span>{user?.email}</span>
+        <div className="flex items-center gap-3 font-mono text-xs text-text-secondary sm:gap-4">
+          <span className="hidden max-w-40 truncate sm:inline">{user?.email}</span>
           <button
             type="button"
             onClick={logout}
-            className="border border-border px-3 py-1 tracking-[0.1em] uppercase transition-colors hover:border-accent hover:text-accent"
+            className="border border-border px-3 py-1.5 tracking-[0.1em] uppercase transition-colors hover:border-accent hover:text-accent"
           >
             Salir
           </button>
         </div>
       </header>
-      <main className="min-h-0 flex-1 overflow-auto p-6">
+
+      <main className="min-h-0 flex-1 overflow-auto p-3 pb-20 sm:p-6 sm:pb-6">
         <Outlet />
       </main>
+
+      <nav className="fixed inset-x-0 bottom-0 z-40 flex shrink-0 border-t border-border bg-surface pb-[env(safe-area-inset-bottom)] sm:hidden">
+        {NAV_ITEMS.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.end}
+            className={({ isActive }) =>
+              `flex flex-1 flex-col items-center gap-1 py-2.5 font-mono text-[10px] tracking-[0.1em] uppercase transition-colors ${
+                isActive ? 'text-accent' : 'text-text-secondary'
+              }`
+            }
+          >
+            <item.icon className="h-5 w-5" />
+            {item.label}
+          </NavLink>
+        ))}
+      </nav>
     </div>
   )
 }

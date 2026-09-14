@@ -99,3 +99,12 @@ body {
 *::-webkit-scrollbar-thumb:hover {
   background-color: var(--color-accent);
 }
+
+/* iOS Safari hace zoom automático al enfocar inputs con font-size < 16px */
+@media (max-width: 639px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}

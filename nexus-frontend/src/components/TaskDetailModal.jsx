@@ -167,12 +167,12 @@ export function TaskDetailModal({ taskId, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-bg/80 p-6 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-bg/80 backdrop-blur-sm sm:p-6"
       onClick={onClose}
     >
       <div
         onClick={(event) => event.stopPropagation()}
-        className="hud-panel flex max-h-[85vh] w-full max-w-2xl flex-col"
+        className="hud-panel flex h-dvh w-full flex-col sm:h-auto sm:max-h-[85vh] sm:max-w-2xl"
       >
         <span className="hud-corner-bl" />
         <span className="hud-corner-br" />
@@ -207,7 +207,7 @@ export function TaskDetailModal({ taskId, onClose }) {
           <button
             type="button"
             onClick={onClose}
-            className="shrink-0 border border-border px-2 py-1 font-mono text-xs text-text-secondary hover:border-accent hover:text-accent"
+            className="shrink-0 border border-border px-3 py-2 font-mono text-xs text-text-secondary hover:border-accent hover:text-accent sm:px-2 sm:py-1"
             aria-label="Cerrar"
           >
             ✕
@@ -223,7 +223,7 @@ export function TaskDetailModal({ taskId, onClose }) {
             <button
               type="button"
               onClick={() => updateTask({ is_done: !task.is_done })}
-              className={`h-4 w-4 shrink-0 border ${task.is_done ? 'border-success bg-success' : 'border-border'}`}
+              className={`relative h-5 w-5 shrink-0 border before:absolute before:-inset-2 before:content-[''] ${task.is_done ? 'border-success bg-success' : 'border-border'}`}
               aria-label="Marcar como hecha"
             />
             <div className="flex gap-1 font-mono text-[11px] tracking-[0.1em] uppercase">
@@ -232,7 +232,7 @@ export function TaskDetailModal({ taskId, onClose }) {
                   key={option.value}
                   type="button"
                   onClick={() => updateTask({ priority: option.value })}
-                  className={`border px-2 py-1 transition-colors ${
+                  className={`border px-3 py-2 transition-colors sm:px-2 sm:py-1 ${
                     task.priority === option.value
                       ? 'border-accent text-accent'
                       : 'border-border text-text-secondary hover:border-text-secondary'
@@ -267,7 +267,7 @@ export function TaskDetailModal({ taskId, onClose }) {
                   <button
                     type="button"
                     onClick={() => toggleSubtask(subtask)}
-                    className={`h-3.5 w-3.5 shrink-0 border ${
+                    className={`relative h-3.5 w-3.5 shrink-0 border before:absolute before:-inset-2 before:content-[''] ${
                       subtask.is_done ? 'border-success bg-success' : 'border-border'
                     }`}
                     aria-label="Marcar como hecha"
@@ -298,7 +298,7 @@ export function TaskDetailModal({ taskId, onClose }) {
                   <button
                     type="button"
                     onClick={() => removeSubtask(subtask.id)}
-                    className="shrink-0 font-mono text-xs text-text-secondary opacity-0 hover:text-danger group-hover:opacity-100"
+                    className="relative shrink-0 p-1 font-mono text-xs text-text-secondary opacity-100 before:absolute before:-inset-2 before:content-[''] hover:text-danger sm:opacity-0 sm:group-hover:opacity-100"
                     aria-label="Eliminar subtarea"
                   >
                     ✕
@@ -343,7 +343,7 @@ export function TaskDetailModal({ taskId, onClose }) {
                   <button
                     type="button"
                     onClick={() => unlinkFile(file.id)}
-                    className="shrink-0 font-mono text-xs text-text-secondary opacity-0 hover:text-danger group-hover:opacity-100"
+                    className="relative shrink-0 p-1 font-mono text-xs text-text-secondary opacity-100 before:absolute before:-inset-2 before:content-[''] hover:text-danger sm:opacity-0 sm:group-hover:opacity-100"
                     aria-label="Desvincular archivo"
                   >
                     ✕

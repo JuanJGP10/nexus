@@ -6,13 +6,13 @@ import { TasksWidget } from '../components/TasksWidget'
 
 export function DashboardPage() {
   return (
-    <div className="grid h-full grid-cols-1 gap-4 lg:grid-cols-[260px_1fr_260px]">
-      <div className="flex min-h-0 flex-col gap-4">
+    <div className="flex flex-col gap-4 lg:grid lg:h-full lg:grid-cols-[260px_1fr_260px]">
+      <div className="flex flex-col gap-4 lg:min-h-0">
         <TasksWidget />
         <NotesWidget />
       </div>
 
-      <div className="min-h-[480px]">
+      <div className="lg:min-h-[480px]">
         <FileExplorer />
       </div>
 

@@ -41,13 +41,23 @@ export function CalendarWidget() {
       title="Calendario"
       action={
         <div className="flex items-center gap-3 font-mono text-xs">
-          <button type="button" onClick={() => changeMonth(-1)} className="text-text-secondary hover:text-accent">
+          <button
+            type="button"
+            onClick={() => changeMonth(-1)}
+            className="p-1.5 text-text-secondary hover:text-accent"
+            aria-label="Mes anterior"
+          >
             ‹
           </button>
           <span className="tracking-[0.1em] text-text-secondary uppercase">
             {cursor.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })}
           </span>
-          <button type="button" onClick={() => changeMonth(1)} className="text-text-secondary hover:text-accent">
+          <button
+            type="button"
+            onClick={() => changeMonth(1)}
+            className="p-1.5 text-text-secondary hover:text-accent"
+            aria-label="Mes siguiente"
+          >
             ›
           </button>
         </div>

@@ -18,12 +18,12 @@ export function DayListModal({ date, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-bg/80 p-6 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-bg/80 backdrop-blur-sm sm:p-6"
       onClick={onClose}
     >
       <div
         onClick={(event) => event.stopPropagation()}
-        className="hud-panel flex max-h-[85vh] w-full max-w-4xl flex-col"
+        className="hud-panel flex h-dvh w-full flex-col sm:h-auto sm:max-h-[85vh] sm:max-w-4xl"
       >
         <span className="hud-corner-bl" />
         <span className="hud-corner-br" />
@@ -35,7 +35,7 @@ export function DayListModal({ date, onClose }) {
           <button
             type="button"
             onClick={onClose}
-            className="border border-border px-2 py-1 font-mono text-xs text-text-secondary hover:border-accent hover:text-accent"
+            className="border border-border px-3 py-2 font-mono text-xs text-text-secondary hover:border-accent hover:text-accent sm:px-2 sm:py-1"
             aria-label="Cerrar"
           >
             ✕
