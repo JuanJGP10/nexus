@@ -43,7 +43,7 @@ export class ApiClient {
   }
 
   buildUrl(path, query) {
-    const url = new URL(this.baseUrl + path)
+    const url = new URL(this.baseUrl + path, window.location.origin)
     if (query) {
       for (const [key, value] of Object.entries(query)) {
         if (value !== undefined && value !== null && value !== '') {
