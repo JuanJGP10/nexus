@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { notesApi } from '../api/endpoints/notes'
-import { formatDateTime } from '../lib/format'
+import { formatDateTime } from '../utils/format'
 
 export function NoteEditorModal({ noteId, onClose }) {
   const [note, setNote] = useState(null)

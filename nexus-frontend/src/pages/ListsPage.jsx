@@ -1,6 +1,6 @@
 import { Panel } from '../components/Panel'
 import { ListGrid } from '../components/ListGrid'
-import { useDayLists } from '../lib/useDayLists'
+import { useDayLists } from '../utils/useDayLists'
 
 export function ListsPage() {
   const { lists, isLoading, error, addList, renameList, removeList, addItem, toggleItem, editItemText, removeItem } =

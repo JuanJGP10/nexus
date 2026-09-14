@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { filesApi } from '../api/endpoints/files'
 import { tasksApi } from '../api/endpoints/tasks'
-import { formatBytes } from '../lib/format'
+import { formatBytes } from '../utils/format'
 
 const PRIORITIES = [
   { value: 'low', label: 'Baja' },

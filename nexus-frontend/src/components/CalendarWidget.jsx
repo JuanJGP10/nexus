@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { dayListsApi } from '../api/endpoints/dayLists'
-import { WEEKDAY_LABELS, getMonthMatrix, isSameDay, toDateKey } from '../lib/calendar'
+import { WEEKDAY_LABELS, getMonthMatrix, isSameDay, toDateKey } from '../utils/calendar'
 import { DayListModal } from './DayListModal'
 import { Panel } from './Panel'
 

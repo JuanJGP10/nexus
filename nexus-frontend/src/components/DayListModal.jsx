@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
-import { toDateKey } from '../lib/calendar'
-import { useDayLists } from '../lib/useDayLists'
+import { toDateKey } from '../utils/calendar'
+import { useDayLists } from '../utils/useDayLists'
 import { ListGrid } from './ListGrid'
 
 export function DayListModal({ date, onClose }) {

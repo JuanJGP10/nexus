@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { filesApi } from '../api/endpoints/files'
 import { foldersApi } from '../api/endpoints/folders'
 import { tasksApi } from '../api/endpoints/tasks'
-import { formatBytes, formatDate } from '../lib/format'
+import { formatBytes, formatDate } from '../utils/format'
 import { Panel } from './Panel'
 
 function FolderIcon({ className }) {
