@@ -1,11 +1,20 @@
 import { useEffect, useState } from 'react'
 import { tasksApi } from '../api/endpoints/tasks'
+import { Panel } from '../components/Panel'
+import { TaskDetailModal } from '../components/TaskDetailModal'
+
+const PRIORITY_DOT = {
+  low: 'bg-text-secondary',
+  medium: 'bg-accent',
+  high: 'bg-danger',
+}
 
 export function TasksPage() {
   const [tasks, setTasks] = useState([])
   const [title, setTitle] = useState('')
   const [error, setError] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [openTaskId, setOpenTaskId] = useState(null)
 
   async function loadTasks() {
     setIsLoading(true)
@@ -54,47 +63,85 @@ export function TasksPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-gray-900">Tareas</h1>
+    <div className="mx-auto max-w-2xl">
+      <Panel title="Tareas">
+        <form onSubmit={handleCreate} className="flex gap-2 border-b border-border p-3">
+          <input
+            type="text"
+            placeholder="Nueva tarea…"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            className="flex-1 border border-border bg-bg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent"
+          />
+          <button
+            type="submit"
+            className="bg-accent px-4 py-2 font-mono text-xs tracking-[0.1em] text-text-primary uppercase hover:bg-accent-hover"
+          >
+            Añadir
+          </button>
+        </form>
 
-      {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+        {error && (
+          <p className="border-b border-danger/40 bg-danger/10 px-3 py-2 font-mono text-xs text-danger">
+            {error}
+          </p>
+        )}
 
-      <form onSubmit={handleCreate} className="flex gap-2">
-        <input
-          type="text"
-          placeholder="Nueva tarea…"
-          value={title}
-          onChange={(event) => setTitle(event.target.value)}
-          className="flex-1 rounded-md border border-gray-300 px-3 py-2 focus:border-gray-500 focus:outline-none"
+        {isLoading ? (
+          <p className="px-3 py-4 font-mono text-xs text-text-secondary">Cargando…</p>
+        ) : tasks.length === 0 ? (
+          <p className="px-3 py-4 font-mono text-xs text-text-secondary">Sin tareas todavía.</p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {tasks.map((task) => (
+              <li key={task.id} className="flex items-center gap-3 px-4 py-3">
+                <button
+                  type="button"
+                  onClick={() => toggleDone(task)}
+                  className={`h-4 w-4 shrink-0 border ${
+                    task.is_done ? 'border-success bg-success' : 'border-border'
+                  }`}
+                  aria-label="Marcar como hecha"
+                />
+                <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${PRIORITY_DOT[task.priority]}`} />
+                <button
+                  type="button"
+                  onClick={() => setOpenTaskId(task.id)}
+                  className={`flex-1 truncate text-left hover:text-accent ${
+                    task.is_done ? 'text-text-secondary line-through' : 'text-text-primary'
+                  }`}
+                >
+                  {task.title}
+                  {task.subtasks.length > 0 && (
+                    <span className="ml-2 font-mono text-[11px] text-text-secondary">
+                      {task.subtasks.filter((subtask) => subtask.is_done).length}/{task.subtasks.length}
+                    </span>
+                  )}
+                </button>
+                <span className="font-mono text-[11px] tracking-[0.1em] text-text-secondary uppercase">
+                  {task.priority}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleTrash(task.id)}
+                  className="font-mono text-xs text-danger hover:underline"
+                >
+                  Borrar
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Panel>
+
+      {openTaskId && (
+        <TaskDetailModal
+          taskId={openTaskId}
+          onClose={() => {
+            setOpenTaskId(null)
+            loadTasks()
+          }}
         />
-        <button type="submit" className="rounded-md bg-gray-900 px-4 py-2 text-white hover:bg-gray-800">
-          Añadir
-        </button>
-      </form>
-
-      {isLoading ? (
-        <p className="text-gray-500">Cargando…</p>
-      ) : tasks.length === 0 ? (
-        <p className="text-gray-500">Sin tareas todavía.</p>
-      ) : (
-        <ul className="divide-y divide-gray-200 rounded-lg border border-gray-200 bg-white">
-          {tasks.map((task) => (
-            <li key={task.id} className="flex items-center gap-3 px-4 py-3">
-              <input type="checkbox" checked={task.is_done} onChange={() => toggleDone(task)} />
-              <span className={`flex-1 ${task.is_done ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
-                {task.title}
-              </span>
-              <span className="text-xs uppercase text-gray-400">{task.priority}</span>
-              <button
-                type="button"
-                onClick={() => handleTrash(task.id)}
-                className="text-sm text-red-600 hover:underline"
-              >
-                Borrar
-              </button>
-            </li>
-          ))}
-        </ul>
       )}
     </div>
   )

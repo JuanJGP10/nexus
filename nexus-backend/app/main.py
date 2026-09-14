@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.core.config import settings
-from app.routers import auth, files, folders, health, tasks
+from app.routers import auth, day_lists, files, folders, health, notes, tasks
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("nexus")
@@ -18,6 +18,10 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    # Content-Disposition no está en la lista de cabeceras "seguras" que el navegador
+    # deja leer a fetch() en peticiones cross-origin por defecto: sin esto, el frontend
+    # nunca ve el filename real y el navegador descarga con nombre genérico sin extensión.
+    expose_headers=["Content-Disposition"],
 )
 
 
@@ -32,3 +36,5 @@ app.include_router(auth.router)
 app.include_router(tasks.router)
 app.include_router(folders.router)
 app.include_router(files.router)
+app.include_router(day_lists.router)
+app.include_router(notes.router)

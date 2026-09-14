@@ -78,7 +78,12 @@ def get_file(db: Session, user_id: int, file_id: int) -> File:
     return file
 
 
-def list_files(db: Session, user_id: int, folder_id: int | None, include_trashed: bool) -> list[File]:
+def list_files(
+    db: Session, user_id: int, folder_id: int | None, task_id: int | None, include_trashed: bool
+) -> list[File]:
+    if task_id is not None:
+        task_service.get_task(db, user_id, task_id)
+        return file_repository.list_for_task(db, user_id, task_id, include_trashed)
     if folder_id is not None:
         folder_service.get_folder(db, user_id, folder_id)
     return file_repository.list_for_user(db, user_id, folder_id, include_trashed)

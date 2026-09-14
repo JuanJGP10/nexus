@@ -14,6 +14,8 @@ services:
     build: ./nexus-backend
     environment:
       DATABASE_URL: postgresql://nexus:nexus@db:5432/nexus
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-secret-change-in-production}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
     ports:
       - "8000:8000"
     depends_on:
@@ -22,7 +24,7 @@ services:
       - ./nexus-backend/app:/app/app
       - ./nexus-backend/alembic:/app/alembic
       - ./nexus-backend/alembic.ini:/app/alembic.ini
-      - ./nexus-backend/storage:/data/storage
+      - ${STORAGE_PATH:-./nexus-backend/storage}:/data/storage
 
 volumes:
   pgdata:

@@ -47,16 +47,19 @@ def list_trash(current_user: User = Depends(get_current_user), db: Session = Dep
 @router.get("", response_model=list[FileOut])
 def list_files(
     folder_id: int | None = None,
+    task_id: int | None = None,
     include_trashed: bool = False,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     try:
         return file_service.list_files(
-            db, user_id=current_user.id, folder_id=folder_id, include_trashed=include_trashed
+            db, user_id=current_user.id, folder_id=folder_id, task_id=task_id, include_trashed=include_trashed
         )
     except folder_service.FolderNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Folder not found")
+    except task_service.TaskNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
 
 
 @router.get("/{file_id}", response_model=FileOut)

@@ -39,6 +39,13 @@ def list_for_user(db: Session, user_id: int, folder_id: int | None, include_tras
     return query.order_by(File.filename).all()
 
 
+def list_for_task(db: Session, user_id: int, task_id: int, include_trashed: bool) -> list[File]:
+    query = db.query(File).filter(File.user_id == user_id, File.task_id == task_id)
+    if not include_trashed:
+        query = query.filter(File.is_trashed.is_(False))
+    return query.order_by(File.filename).all()
+
+
 def list_trashed_for_user(db: Session, user_id: int) -> list[File]:
     return (
         db.query(File)
