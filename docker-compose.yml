@@ -25,6 +25,16 @@ services:
       - ./nexus-backend/alembic:/app/alembic
       - ./nexus-backend/alembic.ini:/app/alembic.ini
       - ${STORAGE_PATH:-./nexus-backend/storage}:/data/storage
+      
+  frontend:
+    build:
+      context: ./nexus-frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
 
 volumes:
   pgdata:
