@@ -1,6 +1,10 @@
 # Nexus: subida de archivos (contenido en disco, no en git)
 nexus-backend/storage/
 
+# Nexus: salida del plugin /graphify (grafo de conocimiento del código,
+# generado localmente, no se sube: son cientos de ficheros de caché)
+graphify-out/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

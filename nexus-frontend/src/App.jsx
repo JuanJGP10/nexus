@@ -4,6 +4,7 @@ import { Layout } from './components/Layout'
 import { AuthPage } from './pages/AuthPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { ListsPage } from './pages/ListsPage'
+import { SchedulePage } from './pages/SchedulePage'
 import { TasksPage } from './pages/TasksPage'
 
 export default function App() {
@@ -16,6 +17,7 @@ export default function App() {
           <Route path="/" element={<DashboardPage />} />
           <Route path="/tasks" element={<TasksPage />} />
           <Route path="/lists" element={<ListsPage />} />
+          <Route path="/schedule" element={<SchedulePage />} />
         </Route>
       </Route>
 

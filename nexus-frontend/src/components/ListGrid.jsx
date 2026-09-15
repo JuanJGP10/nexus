@@ -1,4 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { filesApi } from '../api/endpoints/files'
+import { useFilePreview } from '../hooks/useFilePreview'
+import { FilePreviewModal } from './FilePreviewModal'
 
 function ListCard({ list, onRenameTitle, onAddItem, onToggleItem, onEditItemText, onRemoveItem, onRemoveList }) {
   const [editingTitle, setEditingTitle] = useState(false)
@@ -74,6 +77,130 @@ function ListCard({ list, onRenameTitle, onAddItem, onToggleItem, onEditItemText
   )
 }
 
+function ItemAttachments({ itemId }) {
+  const [open, setOpen] = useState(false)
+  const [files, setFiles] = useState([])
+  const [error, setError] = useState(null)
+  const fileInputRef = useRef(null)
+  const containerRef = useRef(null)
+
+  async function loadFiles() {
+    try {
+      setFiles(await filesApi.list({ day_list_item_id: itemId }))
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  async function toggle() {
+    const next = !open
+    setOpen(next)
+    if (next) await loadFiles()
+  }
+
+  useEffect(() => {
+    if (!open) return
+    function handleClickOutside(event) {
+      if (!containerRef.current?.contains(event.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [open])
+
+  async function handleUpload(event) {
+    const uploaded = Array.from(event.target.files ?? [])
+    event.target.value = ''
+    if (uploaded.length === 0) return
+    try {
+      for (const file of uploaded) {
+        await filesApi.upload(file, { dayListItemId: itemId })
+      }
+      await loadFiles()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  async function unlink(fileId) {
+    try {
+      await filesApi.update(fileId, { day_list_item_id: null })
+      await loadFiles()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  const { preview, openFile, closePreview } = useFilePreview()
+
+  async function openFileItem(fileId) {
+    try {
+      await openFile(fileId)
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  return (
+    <div ref={containerRef} className="relative shrink-0">
+      <button
+        type="button"
+        onClick={toggle}
+        className={`relative p-1 before:absolute before:-inset-2 before:content-[''] ${
+          open ? 'text-accent' : 'text-text-secondary hover:text-accent'
+        }`}
+        aria-label="Adjuntos"
+        aria-expanded={open}
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-3.5 w-3.5">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M18.375 12.739l-6.75 6.75a4.5 4.5 0 01-6.364-6.364l9-9a3 3 0 014.243 4.243l-8.91 8.909a1.5 1.5 0 01-2.122-2.12l7.593-7.594"
+          />
+        </svg>
+      </button>
+      {open && (
+        <div className="absolute right-0 z-20 mt-1 w-60 border border-border bg-surface px-2 py-2">
+          {error && <p className="mb-1 font-mono text-[11px] text-danger">{error}</p>}
+          <ul className="space-y-0.5">
+            {files.length === 0 && <li className="font-mono text-xs text-text-secondary">Sin adjuntos.</li>}
+            {files.map((file) => (
+              <li key={file.id} className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => openFileItem(file.id)}
+                  className="flex-1 truncate text-left text-xs text-text-primary hover:text-accent"
+                >
+                  {file.filename}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => unlink(file.id)}
+                  className="shrink-0 font-mono text-xs text-text-secondary hover:text-danger"
+                  aria-label="Desvincular archivo"
+                >
+                  ✕
+                </button>
+              </li>
+            ))}
+          </ul>
+          <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleUpload} />
+          <div className="mt-1.5 border-t border-border pt-1.5">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="font-mono text-[11px] tracking-[0.1em] text-accent uppercase hover:text-accent-hover"
+            >
+              + Adjuntar
+            </button>
+          </div>
+        </div>
+      )}
+      <FilePreviewModal preview={preview} onClose={closePreview} />
+    </div>
+  )
+}
+
 function ItemList({ items, onToggleItem, onEditItemText, onRemoveItem }) {
   const [editingId, setEditingId] = useState(null)
   const [draftText, setDraftText] = useState('')
@@ -95,7 +222,7 @@ function ItemList({ items, onToggleItem, onEditItemText, onRemoveItem }) {
         <li className="px-1 py-1 font-mono text-xs text-text-secondary">Sin elementos.</li>
       )}
       {items.map((item) => (
-        <li key={item.id} className="group flex items-center gap-2 px-1 py-1">
+        <li key={item.id} className="group relative flex items-center gap-2 px-1 py-1">
           <button
             type="button"
             onClick={() => onToggleItem(item)}
@@ -125,6 +252,7 @@ function ItemList({ items, onToggleItem, onEditItemText, onRemoveItem }) {
               {item.text}
             </button>
           )}
+          <ItemAttachments itemId={item.id} />
           <button
             type="button"
             onClick={() => onRemoveItem(item.id)}

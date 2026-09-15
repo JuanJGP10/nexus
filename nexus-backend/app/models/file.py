@@ -18,6 +18,9 @@ class File(Base):
     task_id: Mapped[int | None] = mapped_column(
         ForeignKey("tasks.id", ondelete="SET NULL"), nullable=True, index=True
     )
+    day_list_item_id: Mapped[int | None] = mapped_column(
+        ForeignKey("day_list_items.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
     is_trashed: Mapped[bool] = mapped_column(default=False, nullable=False)
     trashed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

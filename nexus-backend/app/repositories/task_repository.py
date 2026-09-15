@@ -1,7 +1,7 @@
 from sqlalchemy import case
 from sqlalchemy.orm import Session, selectinload
 
-from app.models.task import Task, TaskPriority
+from app.models.task import DayOfWeek, Task, TaskPriority
 
 _PRIORITY_RANK = case(
     (Task.priority == TaskPriority.low, 0),
@@ -10,8 +10,15 @@ _PRIORITY_RANK = case(
 )
 
 
-def create(db: Session, user_id: int, title: str, description: str | None, priority: TaskPriority) -> Task:
-    task = Task(user_id=user_id, title=title, description=description, priority=priority)
+def create(
+    db: Session,
+    user_id: int,
+    title: str,
+    description: str | None,
+    priority: TaskPriority,
+    day_of_week: DayOfWeek | None = None,
+) -> Task:
+    task = Task(user_id=user_id, title=title, description=description, priority=priority, day_of_week=day_of_week)
     db.add(task)
     db.commit()
     db.refresh(task)
@@ -32,6 +39,7 @@ def list_for_user(
     user_id: int,
     is_done: bool | None = None,
     priority: TaskPriority | None = None,
+    day_of_week: DayOfWeek | None = None,
     sort_by: str = "created_at",
     order: str = "desc",
     include_trashed: bool = False,
@@ -43,6 +51,8 @@ def list_for_user(
         query = query.filter(Task.is_done == is_done)
     if priority is not None:
         query = query.filter(Task.priority == priority)
+    if day_of_week is not None:
+        query = query.filter(Task.day_of_week == day_of_week)
 
     sort_column = _PRIORITY_RANK if sort_by == "priority" else Task.created_at
     sort_column = sort_column.asc() if order == "asc" else sort_column.desc()

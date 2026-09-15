@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { dayListsApi } from '../api/endpoints/dayLists'
-import { WEEKDAY_LABELS, getMonthMatrix, isSameDay, toDateKey } from '../utils/calendar'
+import { tasksApi } from '../api/endpoints/tasks'
+import { WEEKDAY_LABELS, getMonthMatrix, getNextOccurrence, isSameDay, toDateKey } from '../utils/calendar'
 import { DayListModal } from './DayListModal'
 import { Panel } from './Panel'
 
@@ -9,6 +10,7 @@ export function CalendarWidget() {
   const [cursor, setCursor] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1))
   const [openDate, setOpenDate] = useState(null)
   const [daysWithLists, setDaysWithLists] = useState(new Set())
+  const [datesWithTasks, setDatesWithTasks] = useState(new Set())
 
   async function loadDates() {
     try {
@@ -18,8 +20,20 @@ export function CalendarWidget() {
     }
   }
 
+  async function loadTaskDates() {
+    try {
+      const tasks = await tasksApi.list()
+      const weekdays = new Set(tasks.filter((task) => task.day_of_week).map((task) => task.day_of_week))
+      const dates = [...weekdays].map((weekday) => toDateKey(getNextOccurrence(weekday, today)))
+      setDatesWithTasks(new Set(dates))
+    } catch {
+      // indicador no crítico, se ignora si falla
+    }
+  }
+
   useEffect(() => {
     loadDates()
+    loadTaskDates()
   }, [])
 
   const weeks = useMemo(() => {
@@ -34,6 +48,7 @@ export function CalendarWidget() {
   function closeModal() {
     setOpenDate(null)
     loadDates()
+    loadTaskDates()
   }
 
   return (
@@ -76,6 +91,7 @@ export function CalendarWidget() {
           const key = toDateKey(date)
           const isToday = isSameDay(date, today)
           const hasLists = daysWithLists.has(key)
+          const hasTasks = datesWithTasks.has(key)
           return (
             <button
               key={key}
@@ -86,8 +102,11 @@ export function CalendarWidget() {
               } ${isToday ? 'border border-accent text-accent' : 'border border-transparent hover:border-border'}`}
             >
               {date.getDate()}
-              {hasLists && (
-                <span className="absolute bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-accent" />
+              {(hasLists || hasTasks) && (
+                <span className="absolute bottom-0.5 left-1/2 flex -translate-x-1/2 gap-0.5">
+                  {hasLists && <span className="h-1 w-1 rounded-full bg-accent" />}
+                  {hasTasks && <span className="h-1 w-1 rounded-full bg-success" />}
+                </span>
               )}
             </button>
           )

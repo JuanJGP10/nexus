@@ -12,6 +12,7 @@ def create(
     size_bytes: int,
     folder_id: int | None,
     task_id: int | None,
+    day_list_item_id: int | None = None,
 ) -> File:
     file = File(
         user_id=user_id,
@@ -21,6 +22,7 @@ def create(
         size_bytes=size_bytes,
         folder_id=folder_id,
         task_id=task_id,
+        day_list_item_id=day_list_item_id,
     )
     db.add(file)
     db.commit()
@@ -41,6 +43,13 @@ def list_for_user(db: Session, user_id: int, folder_id: int | None, include_tras
 
 def list_for_task(db: Session, user_id: int, task_id: int, include_trashed: bool) -> list[File]:
     query = db.query(File).filter(File.user_id == user_id, File.task_id == task_id)
+    if not include_trashed:
+        query = query.filter(File.is_trashed.is_(False))
+    return query.order_by(File.filename).all()
+
+
+def list_for_day_list_item(db: Session, user_id: int, day_list_item_id: int, include_trashed: bool) -> list[File]:
+    query = db.query(File).filter(File.user_id == user_id, File.day_list_item_id == day_list_item_id)
     if not include_trashed:
         query = query.filter(File.is_trashed.is_(False))
     return query.order_by(File.filename).all()

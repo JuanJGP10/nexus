@@ -6,6 +6,7 @@ const NAV_ITEMS = [
   { to: '/', label: 'Panel', end: true, icon: PanelIcon },
   { to: '/tasks', label: 'Tareas', end: false, icon: TasksIcon },
   { to: '/lists', label: 'Listas', end: false, icon: ListsIcon },
+  { to: '/schedule', label: 'Horario', end: false, icon: ScheduleIcon },
 ]
 
 function PanelIcon({ className }) {
@@ -34,6 +35,16 @@ function ListsIcon({ className }) {
       <rect x="11" y="2.5" width="6.5" height="6.5" rx="0.5" stroke="currentColor" strokeWidth="1.3" />
       <rect x="2.5" y="11" width="6.5" height="6.5" rx="0.5" stroke="currentColor" strokeWidth="1.3" />
       <rect x="11" y="11" width="6.5" height="6.5" rx="0.5" stroke="currentColor" strokeWidth="1.3" />
+    </svg>
+  )
+}
+
+function ScheduleIcon({ className }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" className={className}>
+      <rect x="2.5" y="3.5" width="15" height="14" rx="1" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M2.5 7.5h15M6.5 2v3M13.5 2v3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+      <path d="M6 11h2M10 11h2M6 14h2M10 14h2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
     </svg>
   )
 }

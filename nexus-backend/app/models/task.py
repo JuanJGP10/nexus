@@ -18,6 +18,16 @@ class TaskPriority(str, enum.Enum):
     high = "high"
 
 
+class DayOfWeek(str, enum.Enum):
+    monday = "monday"
+    tuesday = "tuesday"
+    wednesday = "wednesday"
+    thursday = "thursday"
+    friday = "friday"
+    saturday = "saturday"
+    sunday = "sunday"
+
+
 class Task(Base):
     __tablename__ = "tasks"
 
@@ -27,6 +37,7 @@ class Task(Base):
     priority: Mapped[TaskPriority] = mapped_column(
         Enum(TaskPriority, name="task_priority"), default=TaskPriority.medium, nullable=False
     )
+    day_of_week: Mapped[DayOfWeek | None] = mapped_column(Enum(DayOfWeek, name="day_of_week"), nullable=True)
     is_done: Mapped[bool] = mapped_column(default=False, nullable=False)
     is_trashed: Mapped[bool] = mapped_column(default=False, nullable=False)
     trashed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

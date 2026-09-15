@@ -6,11 +6,12 @@ export const filesApi = {
   search: (q, includeTrashed = false) =>
     apiClient.get('/files/search', { query: { q, include_trashed: includeTrashed } }),
   get: (id) => apiClient.get(`/files/${id}`),
-  upload: (file, { folderId, taskId } = {}) => {
+  upload: (file, { folderId, taskId, dayListItemId } = {}) => {
     const formData = new FormData()
     formData.append('upload', file)
     if (folderId) formData.append('folder_id', folderId)
     if (taskId) formData.append('task_id', taskId)
+    if (dayListItemId) formData.append('day_list_item_id', dayListItemId)
     return apiClient.upload('/files', formData)
   },
   update: (id, data) => apiClient.patch(`/files/${id}`, data),

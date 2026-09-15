@@ -7,6 +7,7 @@ class FileUpdate(BaseModel):
     filename: str | None = Field(default=None, min_length=1, max_length=255)
     folder_id: int | None = None
     task_id: int | None = None
+    day_list_item_id: int | None = None
 
 
 class FileOut(BaseModel):
@@ -18,6 +19,7 @@ class FileOut(BaseModel):
     size_bytes: int
     folder_id: int | None
     task_id: int | None
+    day_list_item_id: int | None
     is_trashed: bool
     trashed_at: datetime | None
     created_at: datetime

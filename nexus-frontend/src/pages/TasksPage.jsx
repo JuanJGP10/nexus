@@ -9,6 +9,16 @@ const PRIORITY_DOT = {
   high: 'bg-danger',
 }
 
+const DAY_LABEL = {
+  monday: 'Lun',
+  tuesday: 'Mar',
+  wednesday: 'Mié',
+  thursday: 'Jue',
+  friday: 'Vie',
+  saturday: 'Sáb',
+  sunday: 'Dom',
+}
+
 export function TasksPage() {
   const [tasks, setTasks] = useState([])
   const [title, setTitle] = useState('')
@@ -121,6 +131,11 @@ export function TasksPage() {
                 <span className="hidden font-mono text-[11px] tracking-[0.1em] text-text-secondary uppercase sm:inline">
                   {task.priority}
                 </span>
+                {task.day_of_week && (
+                  <span className="hidden font-mono text-[11px] tracking-[0.1em] text-text-secondary uppercase sm:inline">
+                    {DAY_LABEL[task.day_of_week]}
+                  </span>
+                )}
                 <button
                   type="button"
                   onClick={() => handleTrash(task.id)}

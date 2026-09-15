@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.models.file import File
 from app.repositories import file_repository
-from app.services import folder_service, task_service
+from app.services import day_list_item_service, folder_service, task_service
 
 _SAFE_EXTENSION = re.compile(r"^\.[A-Za-z0-9]{1,10}$")
 
@@ -45,11 +45,14 @@ def create_file(
     upload: UploadFile,
     folder_id: int | None,
     task_id: int | None,
+    day_list_item_id: int | None = None,
 ) -> File:
     if folder_id is not None:
         folder_service.get_folder(db, user_id, folder_id)
     if task_id is not None:
         task_service.get_task(db, user_id, task_id)
+    if day_list_item_id is not None:
+        day_list_item_service.get_item_for_user(db, user_id, day_list_item_id)
 
     stored_name = _make_stored_name(upload.filename or "file")
     destination = _user_dir(user_id) / stored_name
@@ -68,6 +71,7 @@ def create_file(
         size_bytes=size_bytes,
         folder_id=folder_id,
         task_id=task_id,
+        day_list_item_id=day_list_item_id,
     )
 
 
@@ -79,8 +83,16 @@ def get_file(db: Session, user_id: int, file_id: int) -> File:
 
 
 def list_files(
-    db: Session, user_id: int, folder_id: int | None, task_id: int | None, include_trashed: bool
+    db: Session,
+    user_id: int,
+    folder_id: int | None,
+    task_id: int | None,
+    include_trashed: bool,
+    day_list_item_id: int | None = None,
 ) -> list[File]:
+    if day_list_item_id is not None:
+        day_list_item_service.get_item_for_user(db, user_id, day_list_item_id)
+        return file_repository.list_for_day_list_item(db, user_id, day_list_item_id, include_trashed)
     if task_id is not None:
         task_service.get_task(db, user_id, task_id)
         return file_repository.list_for_task(db, user_id, task_id, include_trashed)
@@ -103,6 +115,8 @@ def update_file(db: Session, user_id: int, file_id: int, **fields) -> File:
         folder_service.get_folder(db, user_id, fields["folder_id"])
     if fields.get("task_id") is not None:
         task_service.get_task(db, user_id, fields["task_id"])
+    if fields.get("day_list_item_id") is not None:
+        day_list_item_service.get_item_for_user(db, user_id, fields["day_list_item_id"])
     return file_repository.update(db, file, **fields)
 
 

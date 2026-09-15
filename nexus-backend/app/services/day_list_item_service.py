@@ -22,6 +22,13 @@ def get_item(db: Session, user_id: int, day_list_id: int, item_id: int) -> DayLi
     return item
 
 
+def get_item_for_user(db: Session, user_id: int, item_id: int) -> DayListItem:
+    item = day_list_item_repository.get_by_id(db, item_id)
+    if item is None or item.day_list.user_id != user_id:
+        raise DayListItemNotFoundError(item_id)
+    return item
+
+
 def update_item(db: Session, user_id: int, day_list_id: int, item_id: int, **fields) -> DayListItem:
     item = get_item(db, user_id, day_list_id, item_id)
     return day_list_item_repository.update(db, item, **fields)

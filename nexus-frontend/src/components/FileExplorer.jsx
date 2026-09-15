@@ -2,7 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { filesApi } from '../api/endpoints/files'
 import { foldersApi } from '../api/endpoints/folders'
 import { tasksApi } from '../api/endpoints/tasks'
+import { useFilePreview } from '../hooks/useFilePreview'
 import { formatBytes, formatDate } from '../utils/format'
+import { FilePreviewModal } from './FilePreviewModal'
 import { Panel } from './Panel'
 
 function FolderIcon({ className }) {
@@ -103,6 +105,8 @@ export function FileExplorer() {
     if (path.length > 1) setPath((current) => current.slice(0, -1))
   }
 
+  const { preview, openFile, closePreview } = useFilePreview()
+
   async function openItem(item) {
     if (!item) return
     if (item.type === 'folder') {
@@ -110,13 +114,7 @@ export function FileExplorer() {
       return
     }
     try {
-      const { blob, filename } = await filesApi.download(item.data.id)
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = filename
-      link.click()
-      URL.revokeObjectURL(url)
+      await openFile(item.data.id)
     } catch (err) {
       setError(err.message)
     }
@@ -206,6 +204,7 @@ export function FileExplorer() {
   }
 
   return (
+    <>
     <Panel
       title="Archivos"
       className="h-full"
@@ -233,7 +232,7 @@ export function FileExplorer() {
                 onClick={() => openItem(selectedItem)}
                 className="text-text-secondary hover:text-accent"
               >
-                {selectedItem.type === 'folder' ? 'Abrir' : 'Descargar'}
+                Abrir
               </button>
               <button
                 type="button"
@@ -365,5 +364,7 @@ export function FileExplorer() {
         ↑↓ mover · Enter/→ abrir · ←/Retroceso subir · Supr eliminar
       </div>
     </Panel>
+    <FilePreviewModal preview={preview} onClose={closePreview} />
+    </>
   )
 }

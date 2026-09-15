@@ -1,12 +1,24 @@
 import { useEffect, useRef, useState } from 'react'
 import { filesApi } from '../api/endpoints/files'
 import { tasksApi } from '../api/endpoints/tasks'
+import { useFilePreview } from '../hooks/useFilePreview'
 import { formatBytes } from '../utils/format'
+import { FilePreviewModal } from './FilePreviewModal'
 
 const PRIORITIES = [
   { value: 'low', label: 'Baja' },
   { value: 'medium', label: 'Media' },
   { value: 'high', label: 'Alta' },
+]
+
+const DAYS_OF_WEEK = [
+  { value: 'monday', label: 'Lun', fullLabel: 'Lunes' },
+  { value: 'tuesday', label: 'Mar', fullLabel: 'Martes' },
+  { value: 'wednesday', label: 'Mié', fullLabel: 'Miércoles' },
+  { value: 'thursday', label: 'Jue', fullLabel: 'Jueves' },
+  { value: 'friday', label: 'Vie', fullLabel: 'Viernes' },
+  { value: 'saturday', label: 'Sáb', fullLabel: 'Sábado' },
+  { value: 'sunday', label: 'Dom', fullLabel: 'Domingo' },
 ]
 
 export function TaskDetailModal({ taskId, onClose }) {
@@ -143,15 +155,11 @@ export function TaskDetailModal({ taskId, onClose }) {
     }
   }
 
-  async function downloadFile(fileId) {
+  const { preview, openFile, closePreview } = useFilePreview()
+
+  async function openFileItem(fileId) {
     try {
-      const { blob, filename } = await filesApi.download(fileId)
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = filename
-      link.click()
-      URL.revokeObjectURL(url)
+      await openFile(fileId)
     } catch (err) {
       setError(err.message)
     }
@@ -166,6 +174,7 @@ export function TaskDetailModal({ taskId, onClose }) {
   }
 
   return (
+    <>
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-bg/80 backdrop-blur-sm sm:p-6"
       onClick={onClose}
@@ -234,6 +243,42 @@ export function TaskDetailModal({ taskId, onClose }) {
                   onClick={() => updateTask({ priority: option.value })}
                   className={`border px-3 py-2 transition-colors sm:px-2 sm:py-1 ${
                     task.priority === option.value
+                      ? 'border-accent text-accent'
+                      : 'border-border text-text-secondary hover:border-text-secondary'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="mb-1 flex items-center justify-between">
+              <p className="font-mono text-[11px] tracking-[0.15em] text-text-secondary uppercase">
+                Día de la semana
+              </p>
+              {task.day_of_week && (
+                <button
+                  type="button"
+                  onClick={() => updateTask({ day_of_week: null })}
+                  className="relative p-1 font-mono text-xs text-text-secondary before:absolute before:-inset-2 before:content-[''] hover:text-danger"
+                  aria-label="Quitar día"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-7 gap-1 font-mono text-[11px] tracking-[0.1em] uppercase">
+              {DAYS_OF_WEEK.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => updateTask({ day_of_week: option.value })}
+                  aria-label={option.fullLabel}
+                  aria-pressed={task.day_of_week === option.value}
+                  className={`border py-2 text-center transition-colors sm:py-1 ${
+                    task.day_of_week === option.value
                       ? 'border-accent text-accent'
                       : 'border-border text-text-secondary hover:border-text-secondary'
                   }`}
@@ -334,7 +379,7 @@ export function TaskDetailModal({ taskId, onClose }) {
                 <li key={file.id} className="group flex items-center gap-2 px-1 py-1">
                   <button
                     type="button"
-                    onClick={() => downloadFile(file.id)}
+                    onClick={() => openFileItem(file.id)}
                     className="flex-1 truncate text-left text-sm text-text-primary hover:text-accent"
                   >
                     {file.filename}
@@ -355,5 +400,7 @@ export function TaskDetailModal({ taskId, onClose }) {
         </div>
       </div>
     </div>
+    <FilePreviewModal preview={preview} onClose={closePreview} />
+    </>
   )
 }

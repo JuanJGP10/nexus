@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.dependencies import get_current_user
-from app.models.task import TaskPriority
+from app.models.task import DayOfWeek, TaskPriority
 from app.models.user import User
 from app.schemas.subtask import SubtaskCreate, SubtaskOut, SubtaskUpdate
 from app.schemas.task import TaskCreate, TaskOut, TaskUpdate
@@ -26,6 +26,7 @@ def create_task(
         title=payload.title,
         description=payload.description,
         priority=payload.priority,
+        day_of_week=payload.day_of_week,
     )
 
 
@@ -33,6 +34,7 @@ def create_task(
 def list_tasks(
     is_done: bool | None = None,
     priority: TaskPriority | None = None,
+    day_of_week: DayOfWeek | None = None,
     sort_by: Literal["created_at", "priority"] = "created_at",
     order: Literal["asc", "desc"] = "desc",
     include_trashed: bool = False,
@@ -44,6 +46,7 @@ def list_tasks(
         user_id=current_user.id,
         is_done=is_done,
         priority=priority,
+        day_of_week=day_of_week,
         sort_by=sort_by,
         order=order,
         include_trashed=include_trashed,

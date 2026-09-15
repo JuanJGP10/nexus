@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
-from app.models.task import Task, TaskPriority
+from app.models.task import DayOfWeek, Task, TaskPriority
 from app.repositories import task_repository
 
 
@@ -15,9 +15,16 @@ class TaskNotTrashedError(Exception):
 
 
 def create_task(
-    db: Session, user_id: int, title: str, description: str | None, priority: TaskPriority
+    db: Session,
+    user_id: int,
+    title: str,
+    description: str | None,
+    priority: TaskPriority,
+    day_of_week: DayOfWeek | None = None,
 ) -> Task:
-    return task_repository.create(db, user_id=user_id, title=title, description=description, priority=priority)
+    return task_repository.create(
+        db, user_id=user_id, title=title, description=description, priority=priority, day_of_week=day_of_week
+    )
 
 
 def list_tasks(
@@ -25,6 +32,7 @@ def list_tasks(
     user_id: int,
     is_done: bool | None = None,
     priority: TaskPriority | None = None,
+    day_of_week: DayOfWeek | None = None,
     sort_by: str = "created_at",
     order: str = "desc",
     include_trashed: bool = False,
@@ -34,6 +42,7 @@ def list_tasks(
         user_id,
         is_done=is_done,
         priority=priority,
+        day_of_week=day_of_week,
         sort_by=sort_by,
         order=order,
         include_trashed=include_trashed,

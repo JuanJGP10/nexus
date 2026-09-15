@@ -19,6 +19,10 @@ def get_by_id_for_list(db: Session, day_list_id: int, item_id: int) -> DayListIt
     )
 
 
+def get_by_id(db: Session, item_id: int) -> DayListItem | None:
+    return db.query(DayListItem).filter(DayListItem.id == item_id).first()
+
+
 def update(db: Session, item: DayListItem, **fields) -> DayListItem:
     for key, value in fields.items():
         setattr(item, key, value)

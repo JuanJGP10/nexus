@@ -6,7 +6,7 @@ from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
 from app.schemas.file import FileOut, FileUpdate
-from app.services import file_service, folder_service, task_service
+from app.services import day_list_item_service, file_service, folder_service, task_service
 
 router = APIRouter(prefix="/files", tags=["files"])
 
@@ -16,17 +16,25 @@ def upload_file(
     upload: UploadFile = FileParam(...),
     folder_id: int | None = Form(None),
     task_id: int | None = Form(None),
+    day_list_item_id: int | None = Form(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     try:
         return file_service.create_file(
-            db, user_id=current_user.id, upload=upload, folder_id=folder_id, task_id=task_id
+            db,
+            user_id=current_user.id,
+            upload=upload,
+            folder_id=folder_id,
+            task_id=task_id,
+            day_list_item_id=day_list_item_id,
         )
     except folder_service.FolderNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Folder not found")
     except task_service.TaskNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+    except day_list_item_service.DayListItemNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
 
 
 @router.get("/search", response_model=list[FileOut])
@@ -48,18 +56,26 @@ def list_trash(current_user: User = Depends(get_current_user), db: Session = Dep
 def list_files(
     folder_id: int | None = None,
     task_id: int | None = None,
+    day_list_item_id: int | None = None,
     include_trashed: bool = False,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     try:
         return file_service.list_files(
-            db, user_id=current_user.id, folder_id=folder_id, task_id=task_id, include_trashed=include_trashed
+            db,
+            user_id=current_user.id,
+            folder_id=folder_id,
+            task_id=task_id,
+            day_list_item_id=day_list_item_id,
+            include_trashed=include_trashed,
         )
     except folder_service.FolderNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Folder not found")
     except task_service.TaskNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+    except day_list_item_service.DayListItemNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
 
 
 @router.get("/{file_id}", response_model=FileOut)
@@ -99,6 +115,8 @@ def update_file(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Folder not found")
     except task_service.TaskNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+    except day_list_item_service.DayListItemNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
 
 
 @router.delete("/{file_id}", response_model=FileOut)
