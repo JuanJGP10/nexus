@@ -19,17 +19,17 @@ aprender progresivamente Python/FastAPI a fondo.
 - **Frontend**: React + JavaScript (NO TypeScript, decisión consciente) + Vite + Tailwind CSS
 - **Infraestructura**: Docker / Docker Compose
 - **Storage**: disco local del portátil-servidor, sin AWS/S3/servicios de pago
-- **Acceso remoto**: Tailscale (VPN mesh privada). NO exponer el servidor a
-  internet público, nada de abrir puertos del router directamente
-  **⚠️ Ver aviso en "Infraestructura / despliegue" abajo — `docker-compose.yml`
-  añadió un servicio `cloudflared` que parece contradecir esto. Sin resolver.**
+- **Acceso remoto**: Cloudflare Tunnel (servicio `cloudflared` en
+  `docker-compose.yml`). El sitio se sirve por el túnel, sin abrir puertos del
+  router. El túnel no pide credenciales por sí mismo: **quien conozca la URL
+  llega al login**, así que la seguridad real la pone el JWT (ver "Pendiente")
 - **IA futura**: vía API (Anthropic/OpenAI/Ollama) con capa de herramientas
   tipo MCP — no acceso directo del modelo a la base de datos
 
 ## Entorno de desarrollo
 
 - Desarrollo: PC con Windows (Docker Desktop, backend WSL2)
-- Despliegue: portátil con Omarchy (Arch + Hyprland), accedido vía Tailscale/SSH,
+- Despliegue: portátil con Omarchy (Arch + Hyprland), accedido por SSH,
   nunca tocado físicamente durante el desarrollo
 - Git con `core.autocrlf=input` o `.gitattributes` (`* text=auto eol=lf`) para
   evitar problemas de saltos de línea entre Windows y Linux
@@ -44,23 +44,20 @@ Router (controller) → Service → Repository (SQLAlchemy) → Schema (Pydantic
 - El Service no sabe nada de HTTP
 - El Repository no sabe nada de validación de entrada
 
-## Roadmap por fases (NO avanzar de fase sin permiso explícito)
+## Roadmap (NO avanzar de fase sin permiso explícito)
 
-- **V1 (fase actual)**: Login + Files (carpetas, subida, descarga, papelera,
-  búsqueda) + Tasks (CRUD, prioridad, subtareas, archivos asociados) +
-  relación Files↔Tasks
-- Fase 2: Notas, etiquetas, calendario, proyectos, favoritos, versiones de archivos
-- Fase 3: Sincronización entre dispositivos, PWA / app móvil
-- Fase 4: Asistente IA con herramientas controladas (estilo MCP)
-- Fase 5: Automatizaciones (watchers de carpetas, resúmenes semanales, clasificación)
+Ya hecho y fuera del roadmap: Auth + JWT, Tasks con subtareas y papelera,
+Files con carpetas/papelera/búsqueda/copiar-mover, relación Files↔Tasks,
+Notes, DayLists y calendario, horario de clases, PWA y el despliegue en
+Docker. Lo que queda:
 
-Orden interno acordado dentro de V1: Auth (User + JWT) → Tasks (CRUD puro,
-para fijar el patrón de capas) → Files (añade complejidad de storage/disco).
+- **Fase A (siguiente)**: etiquetas, proyectos, favoritos, versiones de archivos
+- **Fase B**: asistente IA con herramientas controladas (estilo MCP)
+- **Fase C**: automatizaciones (watchers de carpetas, resúmenes semanales,
+  clasificación)
 
-**Nota (ver "Estado actual" abajo)**: en la práctica el proyecto ya superó V1
-— Notes, DayLists/calendario, PWA y un primer despliegue ya existen — sin que
-este roadmap se haya revisado formalmente. Pendiente actualizarlo con calma,
-no a la carrera.
+Antes de empezar una fase nueva toca cerrar la deuda de "Pendiente" (tests y
+`jwt_secret_key`, sobre todo ahora que el sitio está publicado).
 
 ## Cómo trabajar conmigo en este proyecto
 
@@ -84,7 +81,7 @@ presupuesto para hosting de pago.
 
 ## Estado actual
 
-**Última actualización**: 2026-09-16 (ver esa sesión más abajo). Regenerado
+**Última actualización**: 2026-09-16. Regenerado
 originalmente el 2026-09-15 desde un grafo de
 conocimiento del código (`/graphify`, ver `graphify-out/GRAPH_REPORT.md` y
 `graphify-out/graph.html`) en vez de seguir acumulando entradas
@@ -93,12 +90,6 @@ anteriores a esta reescritura puede recuperarse con `git log` /
 `git show CLAUDE.md` si hace falta el detalle exacto; aquí se prioriza que
 la siguiente sesión sepa **qué hay, qué no hay, y qué está pendiente**, no
 una bitácora completa de cada comando ejecutado.
-
-**Fase real vs. roadmap**: el código ya está bastante más allá de "V1" del
-roadmap de arriba (Notes, DayLists/calendario, PWA, tema oscuro/pastel y un
-primer despliegue ya existen). El roadmap por fases sigue sin revisar
-formalmente — no se ha decidido saltar de fase, simplemente el documento no
-se actualizó al mismo ritmo que el código.
 
 ### Qué existe — backend (`nexus-backend/app/`)
 
@@ -118,8 +109,21 @@ se actualizó al mismo ritmo que el código.
   ciclos al mover, conflicto de nombre → 409 (cubre raíz, donde
   `NULL != NULL` en Postgres no detecta duplicados por defecto — chequeo
   explícito), inserción concurrente protegida contra `IntegrityError` sin
-  manejar
-- **Files**: subida/descarga/búsqueda/papelera. Un `File` puede
+  manejar. Añadidos `GET /folders/{id}/path` (ancestros, para las migas de
+  pan al saltar a una carpeta arbitraria), `POST /folders/{id}/copy` (copia
+  recursiva de subcarpetas y archivos) y `DELETE /folders/{id}?recursive=true`
+  (borra la jerarquía y manda sus archivos a la papelera, desvinculándolos
+  antes porque `files.folder_id` no tiene `ON DELETE`)
+- **`app/services/storage.py`** y **`app/services/naming.py`**: primitivas de
+  disco (`make_stored_name`, `duplicate_blob`) y nombres libres de colisión.
+  Están en módulos propios porque los necesitan `file_service` y
+  `folder_service` a la vez, y `file_service` ya importa `folder_service`
+  (importarlo al revés sería un ciclo)
+- **Files**: subida/descarga/búsqueda/papelera/**copia**. `POST /files/{id}/copy`
+  duplica registro + bytes en disco; `DELETE /files/trash` vacía la papelera
+  entera. Al subir, mover o renombrar dentro de una carpeta el backend
+  desambigua el nombre (`a.txt` -> `a (1).txt`), así que ya no hay dos archivos
+  con el mismo nombre en la misma carpeta. Un `File` puede
   vincularse, de forma independiente y opcional, a `Folder` **y/o**
   `Task` **y/o** `DayListItem` (tres FKs nullable, sin exclusión mutua).
   `stored_name` es un UUID generado por el servidor — nunca derivado del
@@ -136,8 +140,8 @@ se actualizó al mismo ritmo que el código.
   archivos adjuntos (vía `File.day_list_item_id`)
 - CORS configurado (`cors_origins` en `.env`), manejador global de
   excepciones (`@app.exception_handler(Exception)` → 500 controlado, no
-  traceback crudo), 11 migraciones Alembic generadas y aplicadas (salvo
-  las dos más recientes, ver "Pendiente" abajo)
+  traceback crudo), 11 migraciones Alembic generadas y todas aplicadas
+  (`alembic current` → `95d6c53da2c8 (head)`)
 - Todas las queries están scopeadas por `user_id`: un recurso ajeno da
   404, nunca 403 (no filtra existencia) — patrón consistente en
   Tasks/Subtasks/Folders/Files/Notes/DayLists
@@ -147,8 +151,8 @@ se actualizó al mismo ritmo que el código.
 - Vite + React 19 (JS, sin TypeScript) + Tailwind CSS v4 + react-router-dom
 - Páginas: `AuthPage`, `DashboardPage` (widgets: `CalendarWidget`,
   `FileExplorer`, `NotesWidget`, `StatusWidget`, `TasksWidget`),
-  `TasksPage`, `ListsPage`, `SchedulePage` (`/schedule`, nav "Horario" —
-  ver sesión 2026-09-16)
+  `FilesPage` (`/files`, nav "Archivos"), `TasksPage`, `ListsPage`,
+  `SchedulePage` (`/schedule`, nav "Horario" — ver sesión 2026-09-16)
 - Tema oscuro + pastel intercambiable (`ThemeSwitcher.jsx`, `theme.js`),
   ajustes responsive/mobile en los modales principales (Calendar,
   DayList, FileExplorer, Note, Task)
@@ -163,6 +167,14 @@ se actualizó al mismo ritmo que el código.
   `data/schedule.js`, para no listar la misma clase dos veces)
 - PWA con manifest + iconos (`vite-plugin-pwa`) — el bug de iconos con
   doble extensión (`.png.png`) ya está arreglado
+- **Explorador de archivos** (`components/files/`): `FileExplorer.jsx` es el
+  orquestador (estado, atajos, arrastre, portapapeles) y a su alrededor hay
+  piezas presentacionales — `ExplorerToolbar`, `ExplorerItems` (fila, celda y
+  cabecera de columnas), `ContextMenu`, `ConfirmDialog`, `FolderPickerModal`,
+  `TaskLinkModal`, `ShortcutsHelp`, `icons.jsx`. Lógica compartida en
+  `utils/files.js` (orden, tipo por extensión, lectura de un drop del sistema)
+  y `hooks/useFileClipboard.js` (portapapeles a nivel de módulo, sobrevive al
+  cambio de pantalla). Ver la sesión del gestor de archivos abajo
 - Capa API centralizada: `ApiClient` (`api/client.js`) — token JWT en
   `localStorage`, hook `onUnauthorized` → logout automático en 401,
   parsea errores de Pydantic (string o array) en `ApiError`, `download()`
@@ -176,33 +188,24 @@ se actualizó al mismo ritmo que el código.
 + `Dockerfile`), y **`cloudflared`** (Cloudflare Tunnel), todos con
 `restart: unless-stopped`.
 
-**⚠️ Contradicción sin resolver, detectada por el grafo de conocimiento
-de esta sesión**: la sección "Stack decidido" de arriba dice
-explícitamente que el acceso remoto es solo por Tailscale y que el
-servidor **no** debe exponerse a internet público. El commit
-`14b37a2` ("Website ready") añadió el servicio `cloudflared`
-(`docker-compose.yml`), que expone el sitio vía túnel de Cloudflare —
-justo lo contrario de la política declarada. No está claro si fue un
-cambio de postura deliberado (¿se decidió exponerlo públicamente para el
-"primer despliegue"?) o un añadido rápido sin repasar la decisión de
-arquitectura original. **Pendiente que el usuario lo aclare** antes de
-seguir tocando `docker-compose.yml` o la política de acceso remoto.
+El acceso público por `cloudflared` es una decisión tomada (2026-09-16):
+sustituye a la idea original de Tailscale, que queda descartada.
+`CLOUDFLARE_TUNNEL_TOKEN` va en `.env` y no está versionado; sin esa variable
+el servicio arranca roto, así que en desarrollo se levanta solo el resto:
+`docker compose up -d --build db backend frontend`.
 
 ### Pendiente / conocido y sin arreglar
 
-- Dos migraciones (`78d87219eadd_add_day_of_week_to_tasks.py`,
-  `95d6c53da2c8_add_day_list_item_id_to_files.py`) siguen sin trackear en
-  git (aparecen como `??` en `git status`) y, según la última nota de
-  sesión que las tocó, sin aplicar (`docker exec nexus-backend-1 alembic
-  upgrade head` pendiente). No reverificado en esta sesión — sin acceso a
-  Docker para comprobarlo
+- **⚠️ Lo más urgente: `jwt_secret_key`** (`core/config.py`) sigue con el
+  default de desarrollo (`dev-secret-change-in-production`) y no está en
+  `.env`. Con el sitio publicado por Cloudflare Tunnel, cualquiera que sepa
+  ese valor (está en el repo) puede firmarse un token válido y entrar como
+  cualquier usuario. Generar uno real y ponerlo en `.env` como
+  `JWT_SECRET_KEY`, y recrear el backend
 - No hay tests automatizados (pytest) todavía — todo verificado a mano
-- `jwt_secret_key` (`core/config.py`) sigue con el default de desarrollo
-  (`dev-secret-change-in-production`) — pendiente uno real vía `.env`
-  antes de cualquier despliegue real (más urgente si `cloudflared`
-  termina confirmándose como acceso público)
-- Nombres de archivo duplicados en la misma carpeta no están bloqueados
-  (a diferencia de `Folder`, sin `UniqueConstraint`/chequeo)
+- Comprobar si las dos migraciones de `day_of_week` y `day_list_item_id`
+  siguen sin trackear en git (aplicadas sí están: `alembic current` devuelve
+  `95d6c53da2c8 (head)`)
 - Búsqueda de archivos no escapa `%`/`_` de `ILIKE` (solo afecta a qué
   coincide la búsqueda, no es inyección SQL)
 - Sin límite de tamaño de subida de archivos
@@ -241,15 +244,9 @@ seguir tocando `docker-compose.yml` o la política de acceso remoto.
   (733 nodos, 1571 aristas, 67 comunidades) en `graphify-out/` — usado
   para reescribir esta sección "Estado actual" a partir de lo que el
   código realmente contiene en vez de la memoria de sesiones anteriores.
-  El hallazgo de la contradicción `cloudflared`/Tailscale de arriba salió
-  directamente de ese grafo (edge `AMBIGUOUS` entre el nodo de política
-  declarada en este archivo y el servicio en `docker-compose.yml`)
-
-**Siguiente paso concreto**: aclarar la contradicción `cloudflared` vs.
-Tailscale-only antes de tocar más infraestructura. Si Docker está
-disponible en la sesión: aplicar las dos migraciones pendientes y probar
-a mano en navegador (día de semana en tareas, adjuntar archivo a un
-elemento de lista, ambos ya arreglados en UI hoy).
+  De ahí salió la contradicción entre la política de acceso remoto escrita
+  aquí y el servicio `cloudflared` real (resuelta el 2026-09-16 a favor de
+  `cloudflared`)
 
 **Notas / decisiones pendientes**:
 - `react-router-dom` se añadió al frontend sin pedir permiso explícito en
@@ -262,7 +259,7 @@ elemento de lista, ambos ya arreglados en UI hoy).
   autenticación de Postgres, aunque la conexión en sí funcione bien
   dentro de la red de Docker)
 
-### Sesión de hoy (2026-09-16)
+### Sesión de hoy (2026-09-16) — calendario y horario
 
 Todo en frontend, sin tocar backend ni Docker.
 
@@ -301,3 +298,116 @@ Todo en frontend, sin tocar backend ni Docker.
 vez, investigar causa antes de seguir parcheando a ciegas. Pendiente
 también decidir si la pestaña "Horario" standalone se queda o se quita
 ahora que el calendario del Dashboard ya muestra lo mismo por día.
+
+### Sesión de hoy (2026-09-16) — gestor de archivos completo
+
+Objetivo: que el explorador se parezca a un gestor de archivos de verdad, con
+teclado, ratón y móvil. Backend y frontend, **sin migraciones** (no cambia el
+esquema: copiar es crear filas nuevas, no columnas nuevas).
+
+**Backend**
+- `POST /files/{id}/copy`, `POST /folders/{id}/copy` (recursiva),
+  `GET /folders/{id}/path`, `DELETE /folders/{id}?recursive=true`,
+  `DELETE /files/trash` (vaciar papelera)
+- `app/services/storage.py` (primitivas de disco) y `app/services/naming.py`
+  (`nombre (1).ext`) extraídos para evitar el ciclo
+  `file_service` ↔ `folder_service`
+- Borrado recursivo: subcarpetas fuera, archivos a la papelera y con
+  `folder_id = NULL` (si no, la FK sin `ON DELETE` reventaría al borrar la fila
+  de la carpeta). Restaurarlos los deja en la raíz
+- Verificado con un script contra SQLite en memoria (copia recursiva, choques
+  de nombre, mover a descendiente rechazado, papelera, ancestros, aislamiento
+  por usuario): 10/10. **El script era temporal, no está en el repo** — sigue
+  sin haber pytest
+
+**Frontend — `components/files/`**
+- Navegación: historial atrás/adelante, subir, migas de pan (que además son
+  destino de arrastre), recargar
+- Selección múltiple: clic, Ctrl+clic, Mayús+clic, Ctrl+A, Mayús+flechas y
+  **recuadro de selección** arrastrando en el hueco (solo ratón)
+- Portapapeles real: Ctrl+C / Ctrl+X / Ctrl+V, lo cortado se ve atenuado, y
+  vive en un módulo para que copiar en el panel y pegar en `/files` funcione
+- Arrastrar y soltar: entre carpetas (con Ctrl copia en vez de mover), sobre
+  las migas de pan, y **desde el escritorio** — soltar una carpeta entera
+  recrea su árbol vía `webkitGetAsEntry`, reutilizando las carpetas que ya
+  existan en vez de chocar con el 409
+- Menú contextual (clic derecho en escritorio, pulsación larga en móvil),
+  renombrado en línea con F2 (preselecciona el nombre sin la extensión),
+  vistas lista/cuadrícula, orden por nombre/tamaño/fecha, filtro instantáneo
+  local y búsqueda global con Enter (con "Ir a la carpeta" en los resultados)
+- Papelera con restaurar / eliminar definitivamente / vaciar; ya no se borra
+  en dos pasos a escondidas como antes
+- Teclado completo: flechas (en cuadrícula se mide cuántas columnas hay),
+  Inicio/Fin, RePág/AvPág, Enter, Retroceso, Supr, Mayús+Supr,
+  Ctrl+Mayús+N, Ctrl+F, Escape y **type-ahead** (escribir salta al nombre).
+  `?` abre la chuleta de atajos
+- Móvil: toque abre, pulsación larga da menú, modo selección con casillas,
+  barra de acciones inferior y modal "Mover a… / Copiar a…" (arrastrar no
+  existe con el dedo, así que sin ese modal no habría forma de mover nada)
+- El `<select>` de "vincular a tarea" de la cabecera pasó a ser
+  `TaskLinkModal` (cabe la lista entera y se puede buscar)
+- Nueva pestaña **Archivos** (`/files`) con el explorador a pantalla completa;
+  el widget del panel sigue existiendo, es el mismo componente con
+  `variant="widget"`
+
+**Sin verificar en navegador**: Docker Desktop no estaba arrancado en esta
+sesión, así que no se pudo levantar la app. `vite build` y `oxlint` pasan, y la
+lógica de backend está probada, pero **el explorador no se ha tocado a mano
+todavía**. Probar sobre todo: arrastrar una carpeta del escritorio, pegar entre
+el panel y `/files`, y la pulsación larga en móvil.
+
+**Servicios levantados al final de la sesión**: `db`, `backend` y `frontend`
+vía `docker compose up -d --build`. `cloudflared` se dejó parado porque
+`CLOUDFLARE_TUNNEL_TOKEN` no está en el `.env` de desarrollo. Migraciones ya
+en `head`. `/files/{id}/copy`, `/folders/{id}/copy`, `/folders/{id}/path` y
+`DELETE /files/trash` responden en el OpenAPI; frontend sirve 200 en :5173.
+
+### Sesión de hoy (2026-09-16) — adjuntos en línea y responsive del gestor
+
+**Listas: adjuntos visibles en la propia fila.** Antes cada elemento tenía un
+clip que abría un popover: no se sabía qué llevaba cada elemento sin ir
+abriéndolos uno a uno, y con varias listas los popovers se tapaban entre sí.
+Ahora cada adjunto es un chip en la misma línea del texto (icono por tipo,
+nombre truncado, clic abre la preview, ✕ lo desvincula). El texto encoge y los
+chips no, así que con un archivo todo cabe en una línea. El clip ahora abre
+directamente el selector de archivos. Una sola `FilePreviewModal` para todo el
+grid en vez de una por elemento.
+
+- Backend: **`GET /files?day_list_id=X`** (`file_repository.list_for_day_list`,
+  JOIN con `day_list_items`). Sin él harían falta tantas peticiones como
+  elementos tenga la lista. Sin migración. Probado contra SQLite
+- `FileKindIcon` extraído a `components/files/icons.jsx` y compartido entre el
+  explorador y los chips de las listas
+
+**Responsive del explorador**, verificado a 390px de ancho (las media queries
+se probaron metiendo la app en un `<iframe>` de 390px desde la consola del
+navegador: `resize_window` no funcionaba en esa ventana):
+
+- **Menú contextual = hoja inferior en móvil** (`< 640px`). Flotando medía más
+  de 400px de alto: en un móvil tapaba media pantalla y el recorte contra los
+  bordes lo mandaba arriba del todo, lejos de donde se había pulsado. Lleva
+  fondo oscurecido, asa, filas de 44px y sin la columna de atajos
+- **Detección de toque por `pointerdown`, no por el click**: Chrome Android
+  reporta `pointerType: 'mouse'` en el evento click, así que un toque se
+  trataba como clic de ratón (seleccionaba en vez de abrir). Se guarda el
+  `pointerType` del `pointerdown`, que sí es correcto. Doble toque ya no abre
+  dos veces
+- **`draggable` desactivado en pantallas táctiles** (`isCoarsePointer()`): en
+  iOS una pulsación larga sobre un elemento arrastrable arranca el arrastre
+  nativo y pisaba nuestro menú contextual. Más `-webkit-touch-callout: none`
+  para que iOS no saque su propio menú encima
+- **Filas con segunda línea** (tamaño · fecha) en móvil: las columnas de la
+  vista de escritorio están ocultas ahí y un archivo no decía nada más que su
+  nombre
+- **Barra de acciones de selección**: desbordaba 48px en 390px. Etiquetas más
+  cortas ("Renom."), menos padding y sin barra de scroll visible
+  (`.no-scrollbar`). Ahora mide justo el ancho disponible
+- Botones de la barra de herramientas a 40px de lado en móvil (7 en
+  escritorio). "Subir una carpeta" oculto en móvil (`webkitdirectory` no existe
+  ahí) y "Atajos de teclado" también (no sirven con el dedo)
+- `pb-[env(safe-area-inset-bottom)]` en los modales pegados abajo
+- Alto del widget del panel en móvil subido a `min-h-[420px]`
+
+**Nota**: `npx prettier` reformateó `ContextMenu.jsx` a sus defaults (comillas
+dobles, punto y coma), que no es el estilo del proyecto. Se reescribió a mano.
+**El proyecto no tiene config de prettier: no lo ejecutes sobre estos archivos.**

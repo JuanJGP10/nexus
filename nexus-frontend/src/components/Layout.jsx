@@ -4,6 +4,7 @@ import { ThemeSwitcher } from './ThemeSwitcher'
 
 const NAV_ITEMS = [
   { to: '/', label: 'Panel', end: true, icon: PanelIcon },
+  { to: '/files', label: 'Archivos', end: false, icon: FilesIcon },
   { to: '/tasks', label: 'Tareas', end: false, icon: TasksIcon },
   { to: '/lists', label: 'Listas', end: false, icon: ListsIcon },
   { to: '/schedule', label: 'Horario', end: false, icon: ScheduleIcon },
@@ -15,6 +16,19 @@ function PanelIcon({ className }) {
       <rect x="2.5" y="2.5" width="6" height="15" rx="1" stroke="currentColor" strokeWidth="1.3" />
       <rect x="11.5" y="2.5" width="6" height="7" rx="1" stroke="currentColor" strokeWidth="1.3" />
       <rect x="11.5" y="11.5" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.3" />
+    </svg>
+  )
+}
+
+function FilesIcon({ className }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" className={className}>
+      <path
+        d="M2.5 5.2a1.4 1.4 0 0 1 1.4-1.4h3.4l1.3 1.9h7A1.4 1.4 0 0 1 17 7.1v7.7a1.4 1.4 0 0 1-1.4 1.4H3.9a1.4 1.4 0 0 1-1.4-1.4V5.2Z"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinejoin="round"
+      />
     </svg>
   )
 }

@@ -15,8 +15,11 @@ export const filesApi = {
     return apiClient.upload('/files', formData)
   },
   update: (id, data) => apiClient.patch(`/files/${id}`, data),
+  /** Duplica el archivo dentro de `folderId` (null = raíz). El backend renombra si choca. */
+  copy: (id, folderId) => apiClient.post(`/files/${id}/copy`, { folder_id: folderId ?? null }),
   trash: (id) => apiClient.delete(`/files/${id}`),
   restore: (id) => apiClient.post(`/files/${id}/restore`),
   remove: (id) => apiClient.delete(`/files/${id}/permanent`),
+  emptyTrash: () => apiClient.delete('/files/trash'),
   download: (id) => apiClient.download(`/files/${id}/download`),
 }

@@ -47,3 +47,9 @@ def get_by_name_and_parent(db: Session, user_id: int, parent_id: int | None, nam
         .filter(Folder.user_id == user_id, Folder.parent_id == parent_id, Folder.name == name)
         .first()
     )
+
+
+def list_names_in_parent(db: Session, user_id: int, parent_id: int | None) -> set[str]:
+    """Nombres de las subcarpetas de un padre, para resolver colisiones al copiar."""
+    rows = db.query(Folder.name).filter(Folder.user_id == user_id, Folder.parent_id == parent_id).all()
+    return {row[0] for row in rows}

@@ -1,17 +1,12 @@
-import re
-import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
-from app.core.config import settings
 from app.models.file import File
 from app.repositories import file_repository
-from app.services import day_list_item_service, folder_service, task_service
-
-_SAFE_EXTENSION = re.compile(r"^\.[A-Za-z0-9]{1,10}$")
+from app.services import day_list_item_service, day_list_service, folder_service, naming, storage, task_service
 
 
 class FileRecordNotFoundError(Exception):
@@ -22,21 +17,8 @@ class FileNotTrashedError(Exception):
     pass
 
 
-def _user_dir(user_id: int) -> Path:
-    path = Path(settings.storage_root) / str(user_id)
-    path.mkdir(parents=True, exist_ok=True)
-    return path
-
-
-def _make_stored_name(original_filename: str) -> str:
-    extension = Path(original_filename).suffix
-    if not _SAFE_EXTENSION.match(extension):
-        extension = ""
-    return f"{uuid.uuid4().hex}{extension}"
-
-
 def get_file_path(file: File) -> Path:
-    return Path(settings.storage_root) / str(file.user_id) / file.stored_name
+    return storage.path_for(file.user_id, file.stored_name)
 
 
 def create_file(
@@ -54,18 +36,25 @@ def create_file(
     if day_list_item_id is not None:
         day_list_item_service.get_item_for_user(db, user_id, day_list_item_id)
 
-    stored_name = _make_stored_name(upload.filename or "file")
-    destination = _user_dir(user_id) / stored_name
+    stored_name = storage.make_stored_name(upload.filename or "file")
+    destination = storage.user_dir(user_id) / stored_name
     size_bytes = 0
     with destination.open("wb") as out:
         while chunk := upload.file.read(1024 * 1024):
             size_bytes += len(chunk)
             out.write(chunk)
 
+    filename = upload.filename or stored_name
+    if folder_id is not None or (task_id is None and day_list_item_id is None):
+        # Solo desambiguamos dentro de una carpeta del explorador; un adjunto de
+        # tarea o de item de lista puede repetir nombre sin molestar a nadie.
+        taken = file_repository.list_names_in_folder(db, user_id, folder_id)
+        filename = naming.unique_name(taken, filename)
+
     return file_repository.create(
         db,
         user_id=user_id,
-        filename=upload.filename or stored_name,
+        filename=filename,
         stored_name=stored_name,
         content_type=upload.content_type,
         size_bytes=size_bytes,
@@ -89,7 +78,11 @@ def list_files(
     task_id: int | None,
     include_trashed: bool,
     day_list_item_id: int | None = None,
+    day_list_id: int | None = None,
 ) -> list[File]:
+    if day_list_id is not None:
+        day_list_service.get_day_list(db, user_id, day_list_id)
+        return file_repository.list_for_day_list(db, user_id, day_list_id, include_trashed)
     if day_list_item_id is not None:
         day_list_item_service.get_item_for_user(db, user_id, day_list_item_id)
         return file_repository.list_for_day_list_item(db, user_id, day_list_item_id, include_trashed)
@@ -117,7 +110,40 @@ def update_file(db: Session, user_id: int, file_id: int, **fields) -> File:
         task_service.get_task(db, user_id, fields["task_id"])
     if fields.get("day_list_item_id") is not None:
         day_list_item_service.get_item_for_user(db, user_id, fields["day_list_item_id"])
+
+    # Mover o renombrar dentro del explorador: evitar dos nombres iguales en la
+    # misma carpeta añadiendo " (n)", igual que haría un gestor de archivos real.
+    if "filename" in fields or "folder_id" in fields:
+        target_folder_id = fields["folder_id"] if "folder_id" in fields else file.folder_id
+        target_name = fields.get("filename", file.filename)
+        taken = file_repository.list_names_in_folder(db, user_id, target_folder_id)
+        if target_folder_id == file.folder_id:
+            taken.discard(file.filename)  # el propio archivo no colisiona consigo mismo
+        fields["filename"] = naming.unique_name(taken, target_name)
+
     return file_repository.update(db, file, **fields)
+
+
+def copy_file(db: Session, user_id: int, file_id: int, folder_id: int | None) -> File:
+    """Duplica un archivo (registro + bytes en disco) dentro de la carpeta destino."""
+    source = get_file(db, user_id, file_id)
+    if folder_id is not None:
+        folder_service.get_folder(db, user_id, folder_id)
+
+    taken = file_repository.list_names_in_folder(db, user_id, folder_id)
+    new_stored_name = storage.duplicate_blob(user_id, source.stored_name)
+
+    return file_repository.create(
+        db,
+        user_id=user_id,
+        filename=naming.unique_name(taken, source.filename),
+        stored_name=new_stored_name,
+        content_type=source.content_type,
+        size_bytes=source.size_bytes,
+        folder_id=folder_id,
+        task_id=None,
+        day_list_item_id=None,
+    )
 
 
 def trash_file(db: Session, user_id: int, file_id: int) -> File:
@@ -140,3 +166,12 @@ def permanently_delete_file(db: Session, user_id: int, file_id: int) -> None:
         raise FileNotTrashedError("File must be trashed before it can be permanently deleted")
     get_file_path(file).unlink(missing_ok=True)
     file_repository.delete(db, file)
+
+
+def empty_trash(db: Session, user_id: int) -> int:
+    """Borra definitivamente todo lo que hay en la papelera. Devuelve cuántos archivos."""
+    trashed = file_repository.list_trashed_for_user(db, user_id)
+    for file in trashed:
+        get_file_path(file).unlink(missing_ok=True)
+        file_repository.delete(db, file)
+    return len(trashed)

@@ -13,6 +13,12 @@ class FolderUpdate(BaseModel):
     parent_id: int | None = None
 
 
+class FolderCopy(BaseModel):
+    """Carpeta padre donde se pega la copia. `None` = raíz."""
+
+    parent_id: int | None = None
+
+
 class FolderOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

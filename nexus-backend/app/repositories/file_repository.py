@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 
+from app.models.day_list_item import DayListItem
 from app.models.file import File
 
 
@@ -55,6 +56,23 @@ def list_for_day_list_item(db: Session, user_id: int, day_list_item_id: int, inc
     return query.order_by(File.filename).all()
 
 
+def list_for_day_list(db: Session, user_id: int, day_list_id: int, include_trashed: bool) -> list[File]:
+    """Adjuntos de todos los elementos de una lista, en una sola consulta.
+
+    El explorador de listas necesita pintar los archivos de cada elemento a la
+    vez; pedirlos item por item serían tantas peticiones como elementos tenga
+    la lista.
+    """
+    query = (
+        db.query(File)
+        .join(DayListItem, File.day_list_item_id == DayListItem.id)
+        .filter(File.user_id == user_id, DayListItem.day_list_id == day_list_id)
+    )
+    if not include_trashed:
+        query = query.filter(File.is_trashed.is_(False))
+    return query.order_by(File.filename).all()
+
+
 def list_trashed_for_user(db: Session, user_id: int) -> list[File]:
     return (
         db.query(File)
@@ -86,3 +104,33 @@ def update(db: Session, file: File, **fields) -> File:
 def delete(db: Session, file: File) -> None:
     db.delete(file)
     db.commit()
+
+
+def list_names_in_folder(db: Session, user_id: int, folder_id: int | None) -> set[str]:
+    """Nombres visibles (no en papelera) de una carpeta, para resolver colisiones al copiar."""
+    rows = (
+        db.query(File.filename)
+        .filter(File.user_id == user_id, File.folder_id == folder_id, File.is_trashed.is_(False))
+        .all()
+    )
+    return {row[0] for row in rows}
+
+
+def detach_and_trash_in_folder(db: Session, user_id: int, folder_id: int, trashed_at) -> int:
+    """Manda a la papelera los archivos de una carpeta y los desvincula de ella.
+
+    Hay que soltar el `folder_id` porque justo después se borra la fila de la
+    carpeta: la FK `files.folder_id` no tiene ON DELETE, así que dejarla apuntando
+    reventaría con IntegrityError. Al restaurarlos desde la papelera aparecen en
+    la raíz, que es lo esperable si su carpeta ya no existe.
+    """
+    count = (
+        db.query(File)
+        .filter(File.user_id == user_id, File.folder_id == folder_id)
+        .update(
+            {File.folder_id: None, File.is_trashed: True, File.trashed_at: trashed_at},
+            synchronize_session=False,
+        )
+    )
+    db.commit()
+    return count

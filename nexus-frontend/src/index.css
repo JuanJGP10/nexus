@@ -122,3 +122,19 @@ body {
     font-size: 16px;
   }
 }
+
+/* Pulsación larga en el explorador: abre NUESTRO menú contextual. Sin esto iOS
+   saca encima su propio menú de "Copiar / Compartir" sobre el elemento. */
+[data-explorer-item] {
+  -webkit-touch-callout: none;
+}
+
+/* Barras que se desplazan a mano (acciones de selección en móvil): la barra de
+   scroll horizontal ahí solo estorba y come altura. */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

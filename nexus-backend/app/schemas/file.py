@@ -10,6 +10,12 @@ class FileUpdate(BaseModel):
     day_list_item_id: int | None = None
 
 
+class FileCopy(BaseModel):
+    """Carpeta destino de la copia. `None` = raíz."""
+
+    folder_id: int | None = None
+
+
 class FileOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

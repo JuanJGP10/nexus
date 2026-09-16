@@ -5,8 +5,8 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
-from app.schemas.file import FileOut, FileUpdate
-from app.services import day_list_item_service, file_service, folder_service, task_service
+from app.schemas.file import FileCopy, FileOut, FileUpdate
+from app.services import day_list_item_service, day_list_service, file_service, folder_service, task_service
 
 router = APIRouter(prefix="/files", tags=["files"])
 
@@ -52,11 +52,17 @@ def list_trash(current_user: User = Depends(get_current_user), db: Session = Dep
     return file_service.list_trash(db, user_id=current_user.id)
 
 
+@router.delete("/trash", status_code=status.HTTP_204_NO_CONTENT)
+def empty_trash(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    file_service.empty_trash(db, user_id=current_user.id)
+
+
 @router.get("", response_model=list[FileOut])
 def list_files(
     folder_id: int | None = None,
     task_id: int | None = None,
     day_list_item_id: int | None = None,
+    day_list_id: int | None = None,
     include_trashed: bool = False,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -68,8 +74,11 @@ def list_files(
             folder_id=folder_id,
             task_id=task_id,
             day_list_item_id=day_list_item_id,
+            day_list_id=day_list_id,
             include_trashed=include_trashed,
         )
+    except day_list_service.DayListNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="List not found")
     except folder_service.FolderNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Folder not found")
     except task_service.TaskNotFoundError:
@@ -117,6 +126,23 @@ def update_file(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
     except day_list_item_service.DayListItemNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
+
+
+@router.post("/{file_id}/copy", response_model=FileOut, status_code=status.HTTP_201_CREATED)
+def copy_file(
+    file_id: int,
+    payload: FileCopy,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        return file_service.copy_file(
+            db, user_id=current_user.id, file_id=file_id, folder_id=payload.folder_id
+        )
+    except file_service.FileRecordNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found")
+    except folder_service.FolderNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Folder not found")
 
 
 @router.delete("/{file_id}", response_model=FileOut)

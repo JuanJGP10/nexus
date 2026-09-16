@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
-from app.schemas.folder import FolderCreate, FolderOut, FolderUpdate
+from app.schemas.folder import FolderCopy, FolderCreate, FolderOut, FolderUpdate
 from app.services import folder_service
 
 router = APIRouter(prefix="/folders", tags=["folders"])
@@ -43,6 +43,32 @@ def get_folder(folder_id: int, current_user: User = Depends(get_current_user), d
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Folder not found")
 
 
+@router.get("/{folder_id}/path", response_model=list[FolderOut])
+def get_folder_path(folder_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Ancestros de la carpeta, de la raíz hacia abajo. Alimenta las migas de pan."""
+    try:
+        return folder_service.get_folder_path(db, user_id=current_user.id, folder_id=folder_id)
+    except folder_service.FolderNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Folder not found")
+
+
+@router.post("/{folder_id}/copy", response_model=FolderOut, status_code=status.HTTP_201_CREATED)
+def copy_folder(
+    folder_id: int,
+    payload: FolderCopy,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        return folder_service.copy_folder(
+            db, user_id=current_user.id, folder_id=folder_id, parent_id=payload.parent_id
+        )
+    except folder_service.FolderNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Folder not found")
+    except folder_service.InvalidFolderMoveError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
 @router.patch("/{folder_id}", response_model=FolderOut)
 def update_folder(
     folder_id: int,
@@ -63,9 +89,17 @@ def update_folder(
 
 
 @router.delete("/{folder_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_folder(folder_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def delete_folder(
+    folder_id: int,
+    recursive: bool = False,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Borra la carpeta. Con `recursive=true` arrastra subcarpetas y manda sus archivos a la papelera."""
     try:
-        folder_service.delete_folder(db, user_id=current_user.id, folder_id=folder_id)
+        folder_service.delete_folder(
+            db, user_id=current_user.id, folder_id=folder_id, recursive=recursive
+        )
     except folder_service.FolderNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Folder not found")
     except folder_service.FolderNotEmptyError as e:
