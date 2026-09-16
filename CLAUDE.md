@@ -20,9 +20,12 @@ aprender progresivamente Python/FastAPI a fondo.
 - **Infraestructura**: Docker / Docker Compose
 - **Storage**: disco local del portátil-servidor, sin AWS/S3/servicios de pago
 - **Acceso remoto**: Cloudflare Tunnel (servicio `cloudflared` en
-  `docker-compose.yml`). El sitio se sirve por el túnel, sin abrir puertos del
-  router. El túnel no pide credenciales por sí mismo: **quien conozca la URL
-  llega al login**, así que la seguridad real la pone el JWT (ver "Pendiente")
+  `docker-compose.yml`) **+ Cloudflare Access con Google SSO**, restringido a
+  dos cuentas (el usuario y su pareja). Nadie de fuera llega ni siquiera al
+  login. Por eso **no hay endpoint de registro**: la app es solo para ellos dos
+  y los usuarios se crean a mano.
+  **Access solo cubre lo que entra por el túnel** — ver el aviso de los `ports`
+  publicados en "Pendiente"
 - **IA futura**: vía API (Anthropic/OpenAI/Ollama) con capa de herramientas
   tipo MCP — no acceso directo del modelo a la base de datos
 
@@ -93,8 +96,11 @@ una bitácora completa de cada comando ejecutado.
 
 ### Qué existe — backend (`nexus-backend/app/`)
 
-- **Auth**: `User` + JWT (`POST /auth/register`, `POST /auth/login`,
-  `GET /auth/me`). bcrypt fijado a `4.0.1` (incompatible con passlib en
+- **Auth**: `User` + JWT (`POST /auth/login`, `GET /auth/me`).
+  **No hay endpoint de registro**: el router solo expone login y me (se quitó
+  en `e4ddb22`, y con el sitio publicado es lo correcto — nadie puede darse de
+  alta desde fuera). `auth_service.register_user()` sigue existiendo pero ya no
+  lo llama nadie: para crear un usuario hay que hacerlo a mano. bcrypt fijado a `4.0.1` (incompatible con passlib en
   versiones más nuevas), mitigación de timing-attack en login
   (`pwd_context.dummy_verify()`), password con límites `8–72` chars,
   `get_current_user` no revienta con un JWT `sub` corrupto (401, no 500)
@@ -194,21 +200,55 @@ sustituye a la idea original de Tailscale, que queda descartada.
 el servicio arranca roto, así que en desarrollo se levanta solo el resto:
 `docker compose up -d --build db backend frontend`.
 
+### Secretos (el repositorio de GitHub es PÚBLICO)
+
+`github.com/JuanJGP10/nexus` es público: **nada que vaya al código es secreto**.
+Comprobado que `.env` nunca se ha commiteado (`.gitignore:158`) y que el
+`CLOUDFLARE_TUNNEL_TOKEN` no aparece en el historial.
+
+- `jwt_secret_key` **no tiene valor por defecto** en `core/config.py`: sin la
+  variable, pydantic lanza `ValidationError` al importar y el backend no arranca.
+  Antes tenía `dev-secret-change-in-production` hardcodeado, que al ser público
+  equivalía a no tener autenticación para quien pudiera hablar con la API
+- `docker-compose.yml` usa `${JWT_SECRET_KEY:?...}`, sin fallback: si falta,
+  `docker compose` falla antes de levantar nada, con un mensaje que apunta a
+  `.env.example`
+- `.env.example` trae la clave vacía y el comando para generarla, para que
+  copiarlo no reintroduzca un secreto conocido
+- Ese valor `dev-secret-change-in-production` sigue en el historial público de
+  git. Cualquier despliegue que lo estuviera usando debe cambiarlo, no basta con
+  el commit que lo quita
+
 ### Pendiente / conocido y sin arreglar
 
-- **⚠️ Lo más urgente: `jwt_secret_key`** (`core/config.py`) sigue con el
-  default de desarrollo (`dev-secret-change-in-production`) y no está en
-  `.env`. Con el sitio publicado por Cloudflare Tunnel, cualquiera que sepa
-  ese valor (está en el repo) puede firmarse un token válido y entrar como
-  cualquier usuario. Generar uno real y ponerlo en `.env` como
-  `JWT_SECRET_KEY`, y recrear el backend
+- **⚠️ Falta poner `JWT_SECRET_KEY` en el `.env` del portátil de despliegue.**
+  El código ya no tiene ningún secreto (ver "Secretos" abajo), pero hasta que no
+  se ponga esa variable ahí, `docker compose` se negará a levantar el backend en
+  producción. Generar uno con
+  `python -c "import secrets; print(secrets.token_urlsafe(48))"`, meterlo en el
+  `.env` de esa máquina y recrear el backend. Efecto secundario: se cierran las
+  sesiones abiertas, nada más — las contraseñas son bcrypt y no dependen del JWT
 - No hay tests automatizados (pytest) todavía — todo verificado a mano
+- **⚠️ Los tres servicios se publican en el host y eso salta Cloudflare Access**:
+  `docker-compose.yml` tiene `db: 5432:5432`, `backend: 8000:8000` y
+  `frontend: 5173:80`. Access solo filtra lo que entra por el túnel, así que
+  cualquiera en la red local del portátil-servidor abre `http://<ip>:5173` y
+  tiene la app entera, `:8000` para la API cruda y `:5432` para la base de datos
+  con `nexus/nexus`. En producción esos mapeos sobran: el backend llega a `db`
+  y nginx llega a `backend` por la red interna de compose. Solo hacen falta en
+  desarrollo
+- Sin rate limiting en `POST /auth/login`. Con Access delante no es explotable
+  desde internet, solo desde la red local del portátil (mismo punto de arriba)
+- `.env.example` trae `JWT_SECRET_KEY=dev-secret-change-in-production`: copiarlo
+  tal cual reintroduce el problema
 - Comprobar si las dos migraciones de `day_of_week` y `day_list_item_id`
   siguen sin trackear en git (aplicadas sí están: `alembic current` devuelve
   `95d6c53da2c8 (head)`)
 - Búsqueda de archivos no escapa `%`/`_` de `ILIKE` (solo afecta a qué
   coincide la búsqueda, no es inyección SQL)
-- Sin límite de tamaño de subida de archivos
+- Sin límite de tamaño de subida en FastAPI. En el despliegue real sí hay uno:
+  `client_max_body_size 100M` en `nexus-frontend/nginx.conf`, que es por donde
+  pasa todo el tráfico del túnel. Solo se saltaría pegándole directo al :8000
 - `nexus-backend/storage/` es bind mount a disco del host — al migrar al
   portátil-servidor de despliegue, confirmar que la ruta existe y tiene
   espacio/permisos correctos

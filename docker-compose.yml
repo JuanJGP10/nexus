@@ -16,7 +16,7 @@ services:
     build: ./nexus-backend
     environment:
       DATABASE_URL: postgresql://nexus:nexus@db:5432/nexus
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-secret-change-in-production}
+      JWT_SECRET_KEY: '${JWT_SECRET_KEY:?falta en el .env de esta maquina, ver .env.example}'
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
     ports:
       - "8000:8000"
