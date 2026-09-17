@@ -84,7 +84,7 @@ presupuesto para hosting de pago.
 
 ## Estado actual
 
-**Última actualización**: 2026-09-16. Regenerado
+**Última actualización**: 2026-09-17. Regenerado
 originalmente el 2026-09-15 desde un grafo de
 conocimiento del código (`/graphify`, ver `graphify-out/GRAPH_REPORT.md` y
 `graphify-out/graph.html`) en vez de seguir acumulando entradas
@@ -262,6 +262,89 @@ Comprobado que `.env` nunca se ha commiteado (`.gitignore:158`) y que el
   Causa sin confirmar — no se sabe si es edición manual del usuario,
   autoguardado de algún plugin/editor, o un bug del propio Claude Code.
   **Si vuelve a pasar, revisar antes de seguir editando ese archivo**
+
+### Sesión de hoy (2026-09-17) — temas nuevos y presentación del panel
+
+Todo frontend. Sin backend, sin migraciones, sin dependencias nuevas.
+
+- **Tres temas nuevos** a partir de paletas que dio el usuario, con el mismo
+  patrón que `dark`/`pastel` (bloque `:root[data-theme='X']` en `index.css`,
+  id en `THEMES` de `theme.js`, entrada en `THEME_OPTIONS` de
+  `ThemeSwitcher.jsx`): `mono` (negro/gris), `ocean` ("Océano", grafito +
+  azules) y `candy` ("Caramelo", pasteles). En los tres, `success` y `danger`
+  se quedan fuera de la paleta a propósito: son señales de estado, no
+  decoración. En `ocean` el `accent-contrast` blanco sobre `#568ea3` da 3.6:1,
+  por debajo del 4.5:1 de WCAG AA para texto pequeño — asumido, arreglarlo
+  obliga a oscurecer el accent y dejaría de ser el color pedido
+- **Logotipo de la cabecera rehecho**: era un `<span>` en mono 400 a `text-sm`
+  con `tracking-[0.35em]`, del color de acento, y se perdía contra la barra de
+  navegación. Ahora es un `<h1>` con `NavLink` a `/` (la marca navega al panel,
+  y la página gana el `h1` que le faltaba en la jerarquía de encabezados) con
+  clase `.brand-mark` en `index.css`: mono **700**, 16/18px, halo
+  `text-shadow` con `color-mix` del acento y una barra vertical de 3px delante.
+  Para el peso 700 se importa `@fontsource/ibm-plex-mono/latin-700.css` en
+  `main.jsx` — mismo paquete que ya estaba, no es dependencia nueva
+- **Huecos raros del panel arreglados**: las tres columnas del dashboard
+  terminaban a alturas distintas. `NotesWidget` tenía `max-h-80` que le impedía
+  crecer aunque fuera `flex-1` (`lg:max-h-none`), la columna derecha no tenía
+  `lg:min-h-0`, y `CalendarWidget` no estiraba (`lg:flex-1` + cuerpo
+  `lg:justify-center`, que centra el bloque de días en vez de separar las
+  semanas). `StatusWidget` pasa a `shrink-0`
+- **Halo del logotipo permanente**, no solo en hover: tres capas de
+  `text-shadow` (6/20/40px), la corta con `accent-hover` para que las letras se
+  vean encendidas en reposo. El hover solo sube la intensidad. El color sale de
+  `--brand` / `--brand-strong`, definidas en `.brand-mark`, para que un tema
+  pueda cambiarlas sin tocar su acento: `mono` lo hace (`#fffbfc`), porque su
+  acento gris dejaba la marca apagada sobre el negro
+- **Tarjetas de lista con alto según contenido** (`ListGrid.jsx`): tenían
+  `h-64` fijo y la `<ul>` con `overflow-auto`, así que una lista de 3 elementos
+  scrolleaba dentro de una caja de 256px. Ahora `min-h-64` sin scroll interno:
+  256px es el mínimo, no el tope. Las tarjetas de una misma fila siguen
+  igualando altura (comportamiento normal del grid); `items-start` lo quitaría
+- **`/files` centrado y con ancho tope**, como `SchedulePage`: `mx-auto w-full
+  max-w-5xl` en `FilesPage.jsx`, y el `Panel` de `FileExplorer` pasa de `h-full`
+  fijo a `max-h-[calc(100dvh-9rem)]` solo en `variant="page"` (el widget del
+  panel conserva `h-full`). Alto según contenido, y al pasarse scrollea la lista
+  por dentro, no la página
+- **`DayListModal` repasado** (el modal de un día del calendario). Antes no era
+  un diálogo para el navegador: sin `role="dialog"`/`aria-modal`, sin foco
+  inicial, el tabulador se escapaba a la página de detrás, la rueda del ratón
+  movía el panel del fondo y `Escape` cerraba a la vez el modal de día y el de
+  tarea que hubiera encima. Ahora: diálogo etiquetado por su `<h2>`, foco al
+  abrir y devuelto al elemento que lo abrió (la celda del calendario),
+  `overflow: hidden` en `body` mientras está abierto, trampa de foco con Tab,
+  `Escape` ignorado cuando `openTaskId` está puesto, y cerrar al hacer clic
+  fuera solo si el gesto **empezó** fuera (antes, soltar el ratón fuera tras
+  seleccionar texto dentro lo cerraba). Visualmente: cabecera con el día
+  destacado + mes + distintivo "Hoy", secciones con regla y contador
+  (`SectionHeading`), icono SVG en vez del glifo `✕`, y `env(safe-area-inset-bottom)`
+  abajo. En móvil el día nunca se recorta: se recorta el mes
+- **Repaso de móvil a 390px** (las cinco pantallas y los modales, medido en un
+  `<iframe>` de 390px porque `resize_window` sigue sin redimensionar esta
+  ventana). Ninguna pantalla tiene scroll horizontal
+  (`scrollWidth === clientWidth` en `/`, `/files`, `/tasks`, `/lists`,
+  `/schedule`). Corregido lo que sí fallaba:
+  - Tarjetas de lista: el `min-h-64` pasó a `sm:min-h-64`. En una sola columna
+    una lista de dos elementos ocupaba 256px y solo cabía una por pantalla;
+    ahora entran tres. El botón "Nueva lista" baja a `min-h-32` en móvil
+  - Zonas de toque: las filas de `TasksWidget`/`NotesWidget` medían 17–20px de
+    alto. Ahora `py-2.5` en móvil (fila de 40px) y el título de la tarea lleva
+    `-my-2 py-2`, que agranda el área sin mover la fila (36px de 40). Mismo
+    tratamiento en `TasksPage` (título 40px de 48) y en las tareas del
+    `DayListModal`. "Ver todas", "+ Nueva" y "Borrar" pasan de 17px a 33px
+- Limpiezas: `index.html` tenía `lang="en"` en una app en español;
+  `TasksIcon` en `Layout.jsx` tenía un `<circle r="0">` muerto
+- Verificado en el navegador a 1568px y a 390px (iframe): sin scroll
+  horizontal (`scrollWidth === clientWidth`), logotipo en IBM Plex Mono 700
+
+**Trampa que costó tiempo**: `docker-compose.yml` ya **no publica puertos**
+(commit `21ed41e`). Para desarrollo hay que usar el otro archivo, que es
+completo, no un overlay:
+`docker compose -f docker-compose.dev.yml up -d --build db backend frontend`.
+Y el **service worker de la PWA sirve el CSS/JS antiguo** después de cada
+`--build`: hay que desregistrarlo y vaciar `caches` (DevTools → Application →
+Service Workers → Unregister, o Ctrl+Shift+R con "Disable cache") o parece que
+los cambios no se han aplicado.
 
 ### Sesión de hoy (2026-09-15, continuación)
 

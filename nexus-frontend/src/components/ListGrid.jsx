@@ -63,12 +63,12 @@ function ItemList({ items, attachmentsByItem, onToggleItem, onEditItemText, onRe
   }
 
   return (
-    <ul className="flex-1 space-y-0.5 overflow-auto p-2">
+    <ul className="flex-1 space-y-0.5 p-2">
       {items.length === 0 && <li className="px-1 py-1 font-mono text-xs text-text-secondary">Sin elementos.</li>}
       {items.map((item) => {
         const files = attachmentsByItem.get(item.id) ?? []
         return (
-          <li key={item.id} className="group flex items-start gap-2 px-1 py-1">
+          <li key={item.id} className="group flex items-start gap-2 px-1 py-1.5 sm:py-1">
             <button
               type="button"
               onClick={() => onToggleItem(item)}
@@ -222,7 +222,7 @@ function ListCard({
   }
 
   return (
-    <div className="hud-panel flex h-64 flex-col">
+    <div className="hud-panel flex flex-col sm:min-h-64">
       <span className="hud-corner-bl" />
       <span className="hud-corner-br" />
 
@@ -342,7 +342,7 @@ export function ListGrid({
         <button
           type="button"
           onClick={onAddList}
-          className="flex h-64 flex-col items-center justify-center gap-1 border border-dashed border-border text-text-secondary transition-colors hover:border-accent hover:text-accent"
+          className="flex min-h-32 flex-col items-center justify-center gap-1 border border-dashed border-border sm:min-h-64 text-text-secondary transition-colors hover:border-accent hover:text-accent"
         >
           <span className="text-2xl leading-none">+</span>
           <span className="font-mono text-xs tracking-[0.1em] uppercase">Nueva lista</span>

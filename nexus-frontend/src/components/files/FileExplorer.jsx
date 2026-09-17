@@ -1090,7 +1090,13 @@ export function FileExplorer({ variant = 'widget' }) {
 
   return (
     <>
-      <Panel title="Archivos" className="h-full" bodyClassName="flex min-h-0 flex-col">
+      {/* Widget: rellena la columna del panel. Página: alto según contenido, con
+          tope para que una carpeta larga no alargue la página entera. */}
+      <Panel
+        title="Archivos"
+        className={compact ? 'h-full' : 'max-h-[calc(100dvh-9rem)]'}
+        bodyClassName="flex min-h-0 flex-col"
+      >
         <ExplorerToolbar
           path={path}
           canGoBack={historyIndex > 0}

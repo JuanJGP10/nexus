@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'nexus-theme'
-export const THEMES = ['dark', 'pastel']
+export const THEMES = ['dark', 'pastel', 'mono', 'ocean', 'candy']
 const DEFAULT_THEME = 'dark'
 
 export function getStoredTheme() {

@@ -3,13 +3,13 @@ import { FileExplorer } from '../components/files/FileExplorer'
 /**
  * Explorador a pantalla completa.
  *
- * El widget del panel sigue existiendo para consultas rápidas, pero organizar
- * archivos de verdad (seleccionar varios, arrastrar entre carpetas, ver
- * tamaños y fechas) necesita todo el ancho, y en móvil aún más.
+ * Centrado y con ancho tope, como el horario: a pantalla completa las columnas
+ * de nombre, tamaño y fecha quedaban separadas por medio metro de vacío. En
+ * móvil ocupa todo porque no sobra ancho.
  */
 export function FilesPage() {
   return (
-    <div className="h-full min-h-[320px]">
+    <div className="mx-auto w-full max-w-5xl">
       <FileExplorer variant="page" />
     </div>
   )

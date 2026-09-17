@@ -4,6 +4,9 @@ import { applyTheme, getStoredTheme } from '../theme'
 const THEME_OPTIONS = [
   { id: 'dark', label: 'Original', swatch: '#a8434b' },
   { id: 'pastel', label: 'Pastel', swatch: '#ffafcc' },
+  { id: 'mono', label: 'Mono', swatch: '#7c7a7a' },
+  { id: 'ocean', label: 'Océano', swatch: '#68c3d4' },
+  { id: 'candy', label: 'Caramelo', swatch: '#a2d2ff' },
 ]
 
 export function ThemeSwitcher() {

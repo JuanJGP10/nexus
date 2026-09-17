@@ -42,12 +42,12 @@ export function NotesWidget() {
   return (
     <Panel
       title="Notas"
-      className="max-h-80 min-h-0 flex-1"
+      className="max-h-80 min-h-0 flex-1 lg:max-h-none"
       action={
         <button
           type="button"
           onClick={createNote}
-          className="font-mono text-[11px] tracking-[0.15em] text-accent uppercase hover:text-accent-hover"
+          className="-m-2 p-2 font-mono text-[11px] tracking-[0.15em] text-accent uppercase hover:text-accent-hover"
         >
           + Nueva
         </button>
@@ -67,7 +67,7 @@ export function NotesWidget() {
               <button
                 type="button"
                 onClick={() => setOpenNoteId(note.id)}
-                className="block w-full px-2 py-1.5 text-left hover:bg-bg"
+                className="block w-full px-2 py-2.5 text-left hover:bg-bg sm:py-1.5"
               >
                 <p className="truncate text-sm text-text-primary">{note.title}</p>
                 {note.content && (

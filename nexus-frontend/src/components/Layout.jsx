@@ -37,7 +37,6 @@ function TasksIcon({ className }) {
   return (
     <svg viewBox="0 0 20 20" fill="none" className={className}>
       <path d="M3.5 5h13M3.5 10h13M3.5 15h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <circle cx="3.5" cy="5" r="0" fill="none" />
     </svg>
   )
 }
@@ -69,8 +68,13 @@ export function Layout() {
   return (
     <div className="flex h-dvh flex-col">
       <header className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-4 py-3 sm:px-6">
-        <div className="flex items-center gap-8">
-          <span className="font-mono text-sm tracking-[0.35em] text-accent uppercase">Nexus</span>
+        <div className="flex items-center gap-6 lg:gap-8">
+          <h1 className="shrink-0">
+            <NavLink to="/" end className="brand-mark" aria-label="Nexus, ir al panel">
+              <span className="brand-mark-bar" aria-hidden="true" />
+              Nexus
+            </NavLink>
+          </h1>
           <nav className="hidden items-center gap-1 font-mono text-xs tracking-[0.1em] uppercase sm:flex">
             {NAV_ITEMS.map((item) => (
               <NavLink

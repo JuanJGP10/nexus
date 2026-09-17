@@ -29,6 +29,45 @@
   --color-danger: #e15b5b;
 }
 
+:root[data-theme='mono'] {
+  --color-bg: #000000;
+  --color-surface: #191919;
+  --color-border: #494949;
+  --color-text-primary: #fffbfc;
+  --color-text-secondary: #7c7a7a;
+  --color-accent: #7c7a7a;
+  --color-accent-hover: #fffbfc;
+  --color-accent-contrast: #000000;
+  --color-success: #4fae83;
+  --color-danger: #e15b5b;
+}
+
+:root[data-theme='ocean'] {
+  --color-bg: #2c2833;
+  --color-surface: #3c3744;
+  --color-border: #56505f;
+  --color-text-primary: #ffe8d1;
+  --color-text-secondary: #a89fae;
+  --color-accent: #568ea3;
+  --color-accent-hover: #68c3d4;
+  --color-accent-contrast: #ffffff;
+  --color-success: #4fae83;
+  --color-danger: #e15b5b;
+}
+
+:root[data-theme='candy'] {
+  --color-bg: #1a1620;
+  --color-surface: #241d2b;
+  --color-border: #3e3348;
+  --color-text-primary: #ffc8dd;
+  --color-text-secondary: #cdb4db;
+  --color-accent: #a2d2ff;
+  --color-accent-hover: #bde0fe;
+  --color-accent-contrast: #1a1620;
+  --color-success: #4fae83;
+  --color-danger: #e15b5b;
+}
+
 body {
   background-color: var(--color-bg);
   background-image:
@@ -38,6 +77,68 @@ body {
   background-attachment: fixed;
   color: var(--color-text-primary);
   font-family: var(--font-sans);
+}
+
+/* Logotipo de la cabecera: es lo unico que identifica la app, asi que va en
+   mono 700 con halo del color de acento para que destaque en todos los temas. */
+.brand-mark {
+  /* El logotipo tira del acento del tema por defecto, pero cada tema puede
+     redefinir estas dos variables si su acento no destaca sobre su fondo. */
+  --brand: var(--color-accent);
+  --brand-strong: var(--color-accent-hover);
+
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1;
+  letter-spacing: 0.42em;
+  text-indent: 0.42em;
+  text-transform: uppercase;
+  color: var(--brand);
+  text-shadow:
+    0 0 6px color-mix(in srgb, var(--brand-strong) 70%, transparent),
+    0 0 20px color-mix(in srgb, var(--brand) 55%, transparent),
+    0 0 40px color-mix(in srgb, var(--brand) 32%, transparent);
+  transition: color 150ms ease, text-shadow 150ms ease;
+}
+
+/* Mono: su acento es gris (#7c7a7a) y el logotipo quedaba apagado sobre el
+   negro. Usa el blanco de la paleta (Snow) solo para la marca. */
+:root[data-theme='mono'] .brand-mark {
+  --brand: #fffbfc;
+  --brand-strong: #ffffff;
+}
+
+.brand-mark:hover {
+  color: var(--brand-strong);
+  text-shadow:
+    0 0 8px color-mix(in srgb, var(--brand-strong) 85%, transparent),
+    0 0 24px color-mix(in srgb, var(--brand-strong) 65%, transparent),
+    0 0 48px color-mix(in srgb, var(--brand-strong) 40%, transparent);
+}
+
+.brand-mark:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 4px;
+}
+
+.brand-mark-bar {
+  width: 3px;
+  height: 1.15em;
+  flex-shrink: 0;
+  background-color: currentColor;
+  box-shadow:
+    0 0 8px color-mix(in srgb, var(--brand-strong) 75%, transparent),
+    0 0 18px color-mix(in srgb, var(--brand) 45%, transparent);
+}
+
+@media (min-width: 640px) {
+  .brand-mark {
+    font-size: 1.125rem;
+  }
 }
 
 /* Panel HUD: bordes finos + esquinas tipo instrumento */

@@ -117,7 +117,7 @@ export function TasksPage() {
                 <button
                   type="button"
                   onClick={() => setOpenTaskId(task.id)}
-                  className={`flex-1 truncate text-left hover:text-accent ${
+                  className={`-my-2 flex-1 truncate py-2 text-left hover:text-accent ${
                     task.is_done ? 'text-text-secondary line-through' : 'text-text-primary'
                   }`}
                 >
@@ -139,7 +139,7 @@ export function TasksPage() {
                 <button
                   type="button"
                   onClick={() => handleTrash(task.id)}
-                  className="shrink-0 font-mono text-xs text-danger hover:underline"
+                  className="-my-2 shrink-0 py-2 font-mono text-xs text-danger hover:underline"
                 >
                   Borrar
                 </button>

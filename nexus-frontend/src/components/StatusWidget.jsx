@@ -16,7 +16,7 @@ export function StatusWidget() {
   const now = useClock()
 
   return (
-    <Panel title="Sistema">
+    <Panel title="Sistema" className="shrink-0">
       <div className="space-y-4 p-4">
         <div>
           <p className="font-mono text-3xl tabular-nums text-accent">

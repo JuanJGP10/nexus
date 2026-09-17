@@ -54,6 +54,7 @@ export function CalendarWidget() {
   return (
     <Panel
       title="Calendario"
+      className="min-h-0 lg:flex-1"
       action={
         <div className="flex items-center gap-3 font-mono text-xs">
           <button
@@ -77,9 +78,9 @@ export function CalendarWidget() {
           </button>
         </div>
       }
-      bodyClassName="p-2"
+      bodyClassName="flex flex-col p-2 lg:justify-center"
     >
-      <div className="grid grid-cols-7 gap-0.5 font-mono text-[10px] text-text-secondary">
+      <div className="grid shrink-0 grid-cols-7 gap-0.5 font-mono text-[10px] text-text-secondary">
         {WEEKDAY_LABELS.map((label) => (
           <div key={label} className="py-1 text-center uppercase">
             {label}
@@ -97,7 +98,7 @@ export function CalendarWidget() {
               key={key}
               type="button"
               onClick={() => setOpenDate(date)}
-              className={`relative aspect-square text-xs transition-colors ${
+              className={`relative flex aspect-square items-center justify-center text-xs transition-colors ${
                 inMonth ? 'text-text-primary' : 'text-text-secondary/40'
               } ${isToday ? 'border border-accent text-accent' : 'border border-transparent hover:border-border'}`}
             >

@@ -12,11 +12,11 @@ export function DashboardPage() {
         <NotesWidget />
       </div>
 
-      <div className="min-h-[420px] lg:min-h-0">
+      <div className="min-h-105 lg:min-h-0">
         <FileExplorer />
       </div>
 
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 lg:min-h-0">
         <StatusWidget />
         <CalendarWidget />
       </div>

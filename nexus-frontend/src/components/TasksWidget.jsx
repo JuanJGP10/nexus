@@ -43,7 +43,7 @@ export function TasksWidget() {
       action={
         <Link
           to="/tasks"
-          className="font-mono text-[11px] tracking-[0.15em] text-accent uppercase hover:text-accent-hover"
+          className="-m-2 p-2 font-mono text-[11px] tracking-[0.15em] text-accent uppercase hover:text-accent-hover"
         >
           Ver todas
         </Link>
@@ -59,7 +59,7 @@ export function TasksWidget() {
           {tasks.map((task) => (
             <li
               key={task.id}
-              className="group flex items-center gap-2 px-2 py-1.5 hover:bg-bg"
+              className="group flex items-center gap-2 px-2 py-2.5 hover:bg-bg sm:py-1.5"
             >
               <button
                 type="button"
@@ -71,7 +71,7 @@ export function TasksWidget() {
               <button
                 type="button"
                 onClick={() => setOpenTaskId(task.id)}
-                className="flex-1 truncate text-left text-sm text-text-primary hover:text-accent"
+                className="-my-2 flex-1 truncate py-2 text-left text-sm text-text-primary hover:text-accent"
               >
                 {task.title}
               </button>
