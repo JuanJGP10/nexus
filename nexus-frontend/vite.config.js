@@ -9,6 +9,10 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: "autoUpdate", // actualiza el SW solo sin pedir confirmación
+      // Cloudflare Access bloquea la peticion anonima del manifest (302 al login).
+      // Con esto el <link rel="manifest"> lleva crossorigin="use-credentials" y
+      // viaja con la cookie CF_Authorization, asi el navegador puede leerlo.
+      useCredentials: true,
       manifest: {
         name: "Nexus",
         short_name: "Nexus",
